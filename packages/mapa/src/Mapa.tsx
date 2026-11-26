@@ -478,18 +478,19 @@ export function Mapa({
     }
   }, [listo, capas.unidadesVecinales, capas.procedimientos, capas.moviles, capas.calor, capas.recorridos, capas.avenidas, capas.salud, capas.bomberos, capas.policia, capas.municipal]);
 
-  // Puntos de interés propios del municipio.
-  const firmaPuntos = puntosInteres.map((p) => `${p.id}:${p.ubicacion.lat}:${p.ubicacion.lng}`).join("|");
+  // Puntos de interés del municipio (recintos GAMA, asistenciales, otros) que ya tienen ubicación.
+  const conUbicacion = puntosInteres.filter((p) => p.ubicacion);
+  const firmaPuntos = conUbicacion.map((p) => `${p.id}:${p.ubicacion!.lat}:${p.ubicacion!.lng}`).join("|");
   useEffect(() => {
     const m = mapa.current;
     if (!m || !listo) return;
     puntosHtml.current.forEach((x) => x.remove());
-    puntosHtml.current = puntosInteres.map((p) => {
+    puntosHtml.current = conUbicacion.map((p) => {
       const el = document.createElement("span");
       el.className = `mapa-poi mapa-poi--${p.tipo}`;
-      el.textContent = TIPOS_PUNTO_LETRA[p.tipo];
-      el.title = `${p.nombre}${p.direccion ? ` · ${p.direccion}` : ""}`;
-      return new Marker({ element: el }).setLngLat([p.ubicacion.lng, p.ubicacion.lat]).addTo(m);
+      el.textContent = p.corto ?? TIPOS_PUNTO_LETRA[p.tipo];
+      el.title = `${p.codigo ? `${p.codigo} · ` : ""}${p.nombre}${p.direccion ? ` · ${p.direccion}` : ""}${p.horario ? ` · ${p.horario}` : ""}`;
+      return new Marker({ element: el }).setLngLat([p.ubicacion!.lng, p.ubicacion!.lat]).addTo(m);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listo, firmaPuntos]);

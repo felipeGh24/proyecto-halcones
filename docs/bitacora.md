@@ -4,6 +4,24 @@ Cada sesión agrega una entrada arriba: fecha, sistema, qué se hizo, qué qued�
 
 ---
 
+## 2026-11-26 (4) · Recintos municipales (GAMA) y asistenciales de noche
+
+**Hecho**
+
+- Catálogo entregado por el municipio en `packages/datos/src/puntos-interes.ts`:
+  - GAMA 1, 2, 3, 4, 5, 6, 8, 13 y 14.
+  - Recinto asistencial 24 horas.
+  - SAPU Lucas Sierra.
+- Las direcciones son cruces de calles y no hay servicio de geocodificación, así que no se inventaron coordenadas. En Georreferenciado, un administrador o supervisor usa «Ubicar» y hace clic en la esquina correcta del mapa; se puede «Mover» después.
+- Exportar e importar los puntos en CSV, para respaldo o para otro equipo.
+- En Halcones, al crear un procedimiento se puede elegir un recinto (GAMA o asistencial): pone el punto y la dirección. Si el recinto no está ubicado, avisa.
+- Los marcadores del mapa muestran el código (G1, G2… 24H, SAPU).
+
+**Pendiente**
+
+- Confirmar si existen GAMA 7, 9, 10, 11 y 12.
+- En la demo las ubicaciones quedan en el navegador de quien las fija; con la base de datos se compartirán con todo el equipo.
+
 ## 2026-11-26 (3) · Mapa con calles, lugares y etiquetas según el acercamiento
 
 **Hecho**

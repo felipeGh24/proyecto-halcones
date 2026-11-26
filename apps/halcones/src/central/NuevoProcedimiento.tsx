@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { centroideUV, historialCercano, obtenerClave, movilesCercanos, obtenerCliente, puede, UNIDADES_VECINALES, unidadVecinalDe, useDatos, type Punto } from "@plataforma/datos";
+import { centroideUV, historialCercano, leerPuntosInteres, obtenerClave, movilesCercanos, obtenerCliente, puede, UNIDADES_VECINALES, unidadVecinalDe, useDatos, type Punto } from "@plataforma/datos";
 import { Mapa } from "@plataforma/mapa";
 import { avisar, Boton, Campo, Modal, useUsuario } from "@plataforma/ui";
 import { BuscadorClave } from "./BuscadorClave";
@@ -21,6 +21,8 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
   const [enfoque, setEnfoque] = useState<Punto | null>(null);
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [calle, setCalle] = useState<string | null>(null);
+  const [puntos] = useState(() => leerPuntosInteres());
+  const [avisoRecinto, setAvisoRecinto] = useState("");
   const uv = punto ? unidadVecinalDe(punto) : null;
   const historial = punto ? historialCercano(procedimientos, punto) : null;
   const masCercano = punto ? movilesCercanos(moviles, punto, 1)[0] : undefined;
@@ -100,6 +102,36 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
               ))}
             </select>
           </Campo>
+          <Campo etiqueta="O en un recinto (GAMA o asistencial)" htmlFor="recinto" ayuda={avisoRecinto || "Pone el punto y la dirección del recinto."}>
+            <select
+              id="recinto"
+              className="ui-entrada"
+              defaultValue=""
+              onChange={(e) => {
+                const r = puntos.find((x) => x.id === e.target.value);
+                if (!r) return;
+                setDireccion(`${r.codigo ? `${r.codigo} · ` : ""}${r.nombre} (${r.direccion})`);
+                if (r.ubicacion) {
+                  setPunto({ ...r.ubicacion });
+                  setEnfoque({ ...r.ubicacion });
+                  setAvisoRecinto("");
+                } else {
+                  setAvisoRecinto("Este recinto aún no está ubicado en el mapa: marca el punto a mano. Un supervisor puede ubicarlo en Georreferenciado.");
+                }
+              }}
+            >
+              <option value="" disabled>
+                Elegir recinto…
+              </option>
+              {puntos.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.codigo ? `${r.codigo} · ` : ""}
+                  {r.nombre}
+                  {r.ubicacion ? "" : " (sin ubicar)"}
+                </option>
+              ))}
+            </select>
+          </Campo>
           <Campo etiqueta="Descripción" htmlFor="descripcion" ayuda="Breve. Evita datos personales que no sean necesarios.">
             <textarea id="descripcion" className="ui-entrada" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={500} />
           </Campo>
@@ -129,6 +161,7 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
               }}
               enfocar={enfoque}
               etiquetas={{ barrios: true }}
+              puntosInteres={puntos}
               capas={{ procedimientos: false, recorridos: false }}
             />
           </div>

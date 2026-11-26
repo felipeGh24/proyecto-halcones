@@ -2,14 +2,18 @@ import { unidadVecinalDe } from "./geo";
 import type { Punto } from "./tipos";
 
 /**
- * Puntos de interés propios del municipio: edificios municipales, sedes, centros de salud, cuarteles, etc.
- * En la demo se guardan en el navegador al cargar una planilla CSV; con la base de datos serán la tabla puntos_interes.
+ * Puntos de interés del municipio: recintos municipales (códigos GAMA), recintos asistenciales y otros lugares.
+ *
+ * El catálogo trae nombre, código y dirección de referencia entregados por el municipio. La ubicación exacta se fija
+ * una vez en el mapa («Ubicar en el mapa») porque las direcciones son cruces de calles. En la demo las ubicaciones
+ * quedan en este navegador; con la base de datos serán la tabla puntos_interes y las verá todo el equipo.
  */
 export type TipoPunto = "municipal" | "salud" | "bomberos" | "policia" | "educacion" | "seguridad" | "otro";
+export type GrupoPunto = "recintos_municipales" | "asistenciales_noche" | "propios";
 
 export const TIPOS_PUNTO: Record<TipoPunto, string> = {
-  municipal: "Edificio municipal",
-  salud: "Salud (SAPU, CESFAM)",
+  municipal: "Recinto municipal",
+  salud: "Salud (SAPU, 24 horas)",
   bomberos: "Bomberos",
   policia: "Carabineros o PDI",
   educacion: "Educación",
@@ -17,49 +21,109 @@ export const TIPOS_PUNTO: Record<TipoPunto, string> = {
   otro: "Otro",
 };
 
+export const GRUPOS_PUNTO: Record<GrupoPunto, string> = {
+  recintos_municipales: "Recintos municipales (GAMA)",
+  asistenciales_noche: "Recintos asistenciales de noche",
+  propios: "Otros puntos cargados",
+};
+
 export interface PuntoInteres {
   id: string;
+  /** Código de radio, por ejemplo «GAMA 1». */
+  codigo?: string;
+  /** Texto corto para el marcador del mapa, por ejemplo «G1». */
+  corto?: string;
   nombre: string;
   tipo: TipoPunto;
+  grupo: GrupoPunto;
   direccion: string;
-  ubicacion: Punto;
+  horario?: string;
+  /** null = todavía no se ha fijado en el mapa. */
+  ubicacion: Punto | null;
   unidadVecinal: number | null;
 }
 
-const CLAVE = "plataforma.puntos-interes.v1";
+type Semilla = Omit<PuntoInteres, "ubicacion" | "unidadVecinal">;
 
-export function leerPuntosInteres(): PuntoInteres[] {
+/** Catálogo entregado por el municipio (26-11-2026). Faltan GAMA 7, 9, 10, 11 y 12 si existen. */
+export const RECINTOS_CONCHALI: Semilla[] = [
+  { id: "gama-1", codigo: "GAMA 1", corto: "G1", nombre: "Municipalidad (edificio consistorial)", tipo: "municipal", grupo: "recintos_municipales", direccion: "Independencia con La Palma" },
+  { id: "gama-2", codigo: "GAMA 2", corto: "G2", nombre: "Dirección de Medio Ambiente, Aseo y Ornato (DIMAO)", tipo: "municipal", grupo: "recintos_municipales", direccion: "Palmilla con Teniente Ponce" },
+  { id: "gama-3", codigo: "GAMA 3", corto: "G3", nombre: "Recinto Registro Civil", tipo: "municipal", grupo: "recintos_municipales", direccion: "Av. Dorsal esquina Independencia" },
+  { id: "gama-4", codigo: "GAMA 4", corto: "G4", nombre: "Polideportivo", tipo: "municipal", grupo: "recintos_municipales", direccion: "Independencia con Cardenal Caro" },
+  { id: "gama-5", codigo: "GAMA 5", corto: "G5", nombre: "Balneario Municipal", tipo: "municipal", grupo: "recintos_municipales", direccion: "Diego Silva con Laura" },
+  { id: "gama-6", codigo: "GAMA 6", corto: "G6", nombre: "DIDECO (asistente social)", tipo: "municipal", grupo: "recintos_municipales", direccion: "Plaza Sagitario (Palmilla con Sagitario)" },
+  { id: "gama-8", codigo: "GAMA 8", corto: "G8", nombre: "Bodegas de Cauquenes", tipo: "municipal", grupo: "recintos_municipales", direccion: "Cauquenes esquina Cristina" },
+  { id: "gama-13", codigo: "GAMA 13", corto: "G13", nombre: "Sección de Reciclaje y Áreas Verdes", tipo: "municipal", grupo: "recintos_municipales", direccion: "Caletera Panamericana Norte con Cardenal Caro (frente a Unilever)" },
+  { id: "gama-14", codigo: "GAMA 14", corto: "G14", nombre: "Espacio de la Mujer", tipo: "municipal", grupo: "recintos_municipales", direccion: "Independencia con Teniente Yávar" },
+  { id: "asist-24h", corto: "24H", nombre: "Recinto asistencial 24 horas", tipo: "salud", grupo: "asistenciales_noche", direccion: "Av. Independencia con Manaos", horario: "24 horas" },
+  { id: "sapu-lucas-sierra", corto: "SAPU", nombre: "SAPU Lucas Sierra", tipo: "salud", grupo: "asistenciales_noche", direccion: "Pedro Fontova esquina Pamplona", horario: "Atención nocturna" },
+];
+
+const CLAVE = "plataforma.puntos-interes.v2";
+
+interface Guardado {
+  ubicaciones: Record<string, Punto>;
+  propios: PuntoInteres[];
+}
+
+function leerGuardado(): Guardado {
   try {
-    return JSON.parse(localStorage.getItem(CLAVE) ?? "[]") as PuntoInteres[];
+    const g = JSON.parse(localStorage.getItem(CLAVE) ?? "null") as Guardado | null;
+    return g ?? { ubicaciones: {}, propios: [] };
   } catch {
-    return [];
+    return { ubicaciones: {}, propios: [] };
   }
 }
 
-export function guardarPuntosInteres(p: PuntoInteres[]) {
+function escribir(g: Guardado) {
   try {
-    localStorage.setItem(CLAVE, JSON.stringify(p));
+    localStorage.setItem(CLAVE, JSON.stringify(g));
+    window.dispatchEvent(new CustomEvent("plataforma-puntos"));
   } catch {
     /* sin espacio */
   }
 }
 
-export const PLANTILLA_CSV = "nombre;tipo;direccion;latitud;longitud\nEjemplo: Edificio consistorial;municipal;Dirección de ejemplo 123;-33.38;-70.67\n";
+/** Catálogo del municipio con las ubicaciones ya fijadas, más los puntos cargados desde planilla. */
+export function leerPuntosInteres(): PuntoInteres[] {
+  const g = leerGuardado();
+  const catalogo = RECINTOS_CONCHALI.map((s) => {
+    const ubicacion = g.ubicaciones[s.id] ?? null;
+    return { ...s, ubicacion, unidadVecinal: ubicacion ? unidadVecinalDe(ubicacion)?.uv ?? null : null };
+  });
+  return [...catalogo, ...g.propios];
+}
+
+export function ubicarPunto(id: string, punto: Punto | null) {
+  const g = leerGuardado();
+  if (g.propios.some((p) => p.id === id)) {
+    g.propios = g.propios.map((p) => (p.id === id ? { ...p, ubicacion: punto, unidadVecinal: punto ? unidadVecinalDe(punto)?.uv ?? null : null } : p));
+  } else if (punto) g.ubicaciones[id] = punto;
+  else delete g.ubicaciones[id];
+  escribir(g);
+}
+
+export function guardarPuntosPropios(p: PuntoInteres[]) {
+  escribir({ ...leerGuardado(), propios: p });
+}
+
+export const PLANTILLA_CSV = "codigo;nombre;tipo;direccion;latitud;longitud\nGAMA 99;Ejemplo de recinto;municipal;Calle A con calle B;-33.38;-70.67\n";
 
 function tipoDesde(texto: string): TipoPunto {
   const t = texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-  if (/munic|gam|consist|delegac|dideco/.test(t)) return "municipal";
-  if (/salud|sapu|cesfam|hospital|cecosf|consultorio|sar\b/.test(t)) return "salud";
+  if (/munic|gama|consist|delegac|dideco/.test(t)) return "municipal";
+  if (/salud|sapu|cesfam|hospital|cecosf|consultorio|sar\b|24/.test(t)) return "salud";
   if (/bomber/.test(t)) return "bomberos";
   if (/carab|comisar|reten|pdi|polic/.test(t)) return "policia";
   if (/colegio|escuela|liceo|jardin|educ/.test(t)) return "educacion";
-  if (/seguridad|halcon|base/.test(t)) return "seguridad";
-  return (["municipal", "salud", "bomberos", "policia", "educacion", "seguridad", "otro"] as TipoPunto[]).includes(t as TipoPunto) ? (t as TipoPunto) : "otro";
+  if (/seguridad|halcon/.test(t)) return "seguridad";
+  return "otro";
 }
 
 /**
- * Lee una planilla CSV (separador «;» o «,») con columnas nombre, tipo, direccion, latitud, longitud.
- * Devuelve los puntos válidos y los errores por fila. Las filas sin coordenadas se informan para completarlas.
+ * Lee una planilla CSV (separador «;» o «,») con columnas codigo, nombre, tipo, direccion, latitud, longitud.
+ * Las filas sin coordenadas se cargan igual, marcadas para ubicarlas en el mapa.
  */
 export function leerCsvPuntos(texto: string): { puntos: PuntoInteres[]; errores: string[] } {
   const lineas = texto.replace(/^﻿/, "").split(/\r?\n/).filter((l) => l.trim());
@@ -67,25 +131,41 @@ export function leerCsvPuntos(texto: string): { puntos: PuntoInteres[]; errores:
   const sep = lineas[0].includes(";") ? ";" : ",";
   const cab = lineas[0].split(sep).map((c) => c.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""));
   const col = (...n: string[]) => cab.findIndex((c) => n.includes(c));
+  const iC = col("codigo", "code");
   const iN = col("nombre", "name");
   const iT = col("tipo", "categoria", "type");
   const iD = col("direccion", "address");
   const iLa = col("latitud", "lat", "y");
   const iLo = col("longitud", "lng", "lon", "x");
-  if (iN < 0 || iLa < 0 || iLo < 0) return { puntos: [], errores: ["Faltan columnas: se necesitan nombre, latitud y longitud."] };
+  if (iN < 0) return { puntos: [], errores: ["Falta la columna «nombre»."] };
   const puntos: PuntoInteres[] = [];
   const errores: string[] = [];
   lineas.slice(1).forEach((l, i) => {
     const c = l.split(sep).map((x) => x.trim().replace(/^"|"$/g, ""));
-    const lat = Number((c[iLa] ?? "").replace(",", "."));
-    const lng = Number((c[iLo] ?? "").replace(",", "."));
     if (!c[iN]) return;
-    if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat === 0 || lng === 0) {
-      errores.push(`Fila ${i + 2} (${c[iN]}): sin coordenadas válidas.`);
-      return;
-    }
-    const ubicacion = { lat, lng };
-    puntos.push({ id: `poi-${i}-${c[iN].slice(0, 20)}`, nombre: c[iN], tipo: tipoDesde(iT >= 0 ? c[iT] ?? "" : c[iN]), direccion: iD >= 0 ? c[iD] ?? "" : "", ubicacion, unidadVecinal: unidadVecinalDe(ubicacion)?.uv ?? null });
+    const lat = iLa >= 0 ? Number((c[iLa] ?? "").replace(",", ".")) : NaN;
+    const lng = iLo >= 0 ? Number((c[iLo] ?? "").replace(",", ".")) : NaN;
+    const valido = Number.isFinite(lat) && Number.isFinite(lng) && lat !== 0 && lng !== 0;
+    if (!valido) errores.push(`Fila ${i + 2} (${c[iN]}): sin coordenadas; ubícala en el mapa.`);
+    const ubicacion = valido ? { lat, lng } : null;
+    const codigo = iC >= 0 ? c[iC] || undefined : undefined;
+    puntos.push({
+      id: `propio-${i}-${c[iN].slice(0, 24)}`,
+      codigo,
+      corto: codigo ? codigo.replace(/^gama\s*/i, "G").slice(0, 5) : undefined,
+      nombre: c[iN],
+      tipo: tipoDesde(`${iT >= 0 ? c[iT] ?? "" : ""} ${codigo ?? ""} ${c[iN]}`),
+      grupo: "propios",
+      direccion: iD >= 0 ? c[iD] ?? "" : "",
+      ubicacion,
+      unidadVecinal: ubicacion ? unidadVecinalDe(ubicacion)?.uv ?? null : null,
+    });
   });
   return { puntos, errores };
+}
+
+/** Exporta los puntos con sus coordenadas, para respaldo o para cargarlos en otro equipo. */
+export function puntosACsv(p: PuntoInteres[]): string {
+  const filas = p.map((x) => [x.codigo ?? "", x.nombre, x.tipo, x.direccion, x.ubicacion?.lat ?? "", x.ubicacion?.lng ?? ""].join(";"));
+  return "﻿" + ["codigo;nombre;tipo;direccion;latitud;longitud", ...filas].join("\r\n");
 }

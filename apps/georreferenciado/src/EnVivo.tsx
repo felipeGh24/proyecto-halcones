@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { analizarPatrones, esActivo, leerPuntosInteres, normalizar, obtenerClave, useDatos, type PuntoInteres, type Punto } from "@plataforma/datos";
+import { analizarPatrones, esActivo, leerPuntosInteres, ubicarPunto, normalizar, obtenerClave, useDatos, type PuntoInteres, type Punto } from "@plataforma/datos";
 import { CAPAS_INICIALES, EscalaCoropleta, LeyendaBarrios, LeyendaMapa, Mapa, type Capas, type MarcaMapa, type Seleccion } from "@plataforma/mapa";
-import { Icono, Insignia, Semaforo } from "@plataforma/ui";
+import { avisar, Icono, Insignia, Semaforo, useUsuario } from "@plataforma/ui";
 import { MarcoGeo } from "./MarcoGeo";
 import { PuntosPropios } from "./PuntosPropios";
 import { PanelDetalle } from "./PanelDetalle";
@@ -36,6 +36,9 @@ export function EnVivo() {
   const [capas, setCapas] = useState<Capas>(CAPAS_INICIALES);
   const [puntos, setPuntos] = useState<PuntoInteres[]>(() => leerPuntosInteres());
   const [verPuntos, setVerPuntos] = useState(true);
+  const [ubicando, setUbicando] = useState<PuntoInteres | null>(null);
+  const usuario = useUsuario();
+  const puedeEditarPuntos = usuario.rol === "administrador" || usuario.rol === "supervisor";
   const [extras, setExtras] = useState<Extras>({ colores: true, barrios: true, uvs: false, conflicto: false, sugerencias: false });
   const patrones = useMemo(() => (extras.conflicto || extras.sugerencias ? analizarPatrones(procedimientos) : null), [procedimientos, extras.conflicto, extras.sugerencias]);
   const coropleta = useMemo(() => {
@@ -114,7 +117,19 @@ export function EnVivo() {
               </label>
             ))}
           </fieldset>
-          <PuntosPropios puntos={puntos} onCambio={setPuntos} visibles={verPuntos} onVisibles={setVerPuntos} />
+          <PuntosPropios
+            puntos={puntos}
+            visibles={verPuntos}
+            onVisibles={setVerPuntos}
+            puedeEditar={puedeEditarPuntos}
+            ubicandoId={ubicando?.id ?? null}
+            onUbicar={(p) => {
+              setUbicando(p);
+              if (p?.ubicacion) setEnfoque({ ...p.ubicacion });
+            }}
+            onIr={(p) => p.ubicacion && setEnfoque({ ...p.ubicacion })}
+            onRecargar={() => setPuntos(leerPuntosInteres())}
+          />
           <fieldset className="geo__capas">
             <legend>Territorio y patrones</legend>
             {NOMBRES_EXTRAS.map((c) => (
@@ -130,6 +145,16 @@ export function EnVivo() {
         </aside>
 
         <section className="geo__mapa ui-tarjeta" aria-label="Mapa">
+          {ubicando && (
+            <div className="geo__ubicando" role="status">
+              <span>
+                Ubicando <strong>{ubicando.codigo ?? ubicando.nombre}</strong>: haz clic en <strong>{ubicando.direccion}</strong>.
+              </span>
+              <button type="button" className="enlace" onClick={() => setUbicando(null)}>
+                Cancelar
+              </button>
+            </div>
+          )}
           <Mapa
             procedimientos={procedimientos}
             moviles={moviles}
@@ -143,6 +168,16 @@ export function EnVivo() {
             marcas={marcas}
             colorBarrios={extras.colores}
             puntosInteres={verPuntos ? puntos : []}
+            onClicMapa={
+              ubicando
+                ? (p) => {
+                    ubicarPunto(ubicando.id, p);
+                    setPuntos(leerPuntosInteres());
+                    avisar(`${ubicando.codigo ?? ubicando.nombre} ubicado`);
+                    setUbicando(null);
+                  }
+                : undefined
+            }
           />
         </section>
 
