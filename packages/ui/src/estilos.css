@@ -222,7 +222,9 @@ select.ui-entrada { padding-right: 32px; appearance: none; background-image: url
 .ui-segmentos button[aria-pressed="true"] { background: var(--fondo); color: var(--texto); box-shadow: var(--sombra); font-weight: 600; }
 
 /* ---------- Aviso flotante ---------- */
-.ui-avisos { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: grid; gap: 8px; z-index: 200; }
+.ui-avisos { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: grid; gap: 8px; z-index: 200; pointer-events: none; }
+.ui-avisos .ui-aviso { pointer-events: auto; }
+@media (max-width: 600px) { .ui-avisos { top: calc(8px + env(safe-area-inset-top)); bottom: auto; width: calc(100% - 24px); } }
 .ui-aviso { background: var(--texto); color: #fff; padding: 12px 16px; border-radius: var(--radio-sm); box-shadow: var(--sombra-flotante); display: flex; align-items: center; gap: 12px; font-size: 13px; }
 
 @media (max-width: 900px) {
@@ -243,7 +245,9 @@ select.ui-entrada { padding-right: 32px; appearance: none; background-image: url
 
 /* ---------- Fotos y videos ---------- */
 .adjuntos { display: grid; gap: 8px; }
-.adjuntos__boton { justify-self: start; }
+.adjuntos__botones { display: flex; flex-wrap: wrap; gap: 8px; }
+.adjuntos__boton { min-height: 44px; }
+@media (max-width: 600px) { .adjuntos__botones { display: grid; grid-template-columns: repeat(3, 1fr); } .adjuntos__botones .ui-boton { width: 100%; justify-content: center; padding-inline: 6px; font-size: 13px; } }
 .adjuntos__lista { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .adjuntos__item { position: relative; display: grid; gap: 2px; width: 104px; }
 .adjuntos__mini { all: unset; box-sizing: border-box; width: 104px; height: 78px; border-radius: 8px; overflow: hidden; background: var(--superficie); border: 1px solid var(--borde); display: grid; place-items: center; cursor: pointer; color: var(--texto-3); }
@@ -251,3 +255,13 @@ select.ui-entrada { padding-right: 32px; appearance: none; background-image: url
 .adjuntos__ausente { cursor: default; }
 .adjuntos__nombre { font-size: 11px; color: var(--texto-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .adjuntos__quitar { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; border: 0; background: rgba(14, 26, 43, 0.75); color: #fff; display: grid; place-items: center; cursor: pointer; }
+
+/* ---------- Dirección con sugerencias ---------- */
+.ui-direccion { position: relative; display: grid; gap: 6px; }
+.ui-direccion__control { position: relative; }
+.ui-direccion__estado { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--texto-3); }
+.ui-direccion__lista { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20; list-style: none; margin: 0; padding: 6px; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; box-shadow: var(--sombra-flotante); max-height: 300px; overflow: auto; }
+.ui-direccion__lista li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; cursor: pointer; min-height: 44px; }
+.ui-direccion__lista li.activo, .ui-direccion__lista li:hover { background: var(--superficie); }
+.ui-direccion__lista li svg { color: var(--primario); flex: none; }
+.ui-entrada--grande { font-size: 16px; min-height: 48px; }

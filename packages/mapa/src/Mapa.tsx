@@ -76,7 +76,7 @@ export interface MarcaMapa {
   id: string;
   punto: Punto;
   texto: string;
-  tipo: "punto_fijo" | "patrullaje" | "alza" | "respuesta" | "personal";
+  tipo: "punto_fijo" | "patrullaje" | "alza" | "respuesta" | "personal" | "reporte";
   titulo?: string;
 }
 

@@ -11,3 +11,5 @@ export * from "./patrones";
 export * from "./puntos-interes";
 export * from "./adjuntos";
 export { datosVacios } from "./demo/semilla";
+export * from "./geocodificar";
+export * from "./terreno";

@@ -79,6 +79,7 @@ Para probar el flujo completo con `npm run demo`: entra como patrullero e inicia
 Copia `.env.example` como `.env.local` en la raíz. Nunca subas valores reales al repositorio.
 
 - `VITE_MAPA_ESTILO_URL`: estilo del mapa base. Si no se define, se usa OpenFreeMap (gratuito, sin clave, sin garantía de servicio). Para producción conviene un proveedor con contrato (por ejemplo MapTiler, con la clave restringida por dominio) o un servidor propio. Con `ninguno` se muestra solo el mapa de unidades vecinales.
+- `VITE_GEOCODIFICADOR_URL`: buscador de direcciones (calle y número o esquina, solo dentro de Conchalí). Si no se define, usa el servicio público de OpenStreetMap (Nominatim), que sirve para la demo pero limita a una consulta por segundo; para vender, instancia propia o proveedor con contrato. Con `ninguno` el punto se marca solo en el mapa.
 - `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`: cuando exista el proyecto de Supabase.
 
 ## Seguridad

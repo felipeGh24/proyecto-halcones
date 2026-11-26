@@ -3,7 +3,8 @@ import { partesLocales, turnoDe } from "./formato";
 import { UNIDADES_VECINALES, unidadVecinalDe } from "./geo";
 import { mediana, tiemposDe } from "./indicadores";
 import { infoDeClave } from "./semaforo";
-import type { Prioridad, Procedimiento, Punto, Turno } from "./tipos";
+import type { Prioridad, Procedimiento, Punto, Reporte, Turno } from "./tipos";
+import { analizarTerreno } from "./terreno";
 
 /**
  * Motor de patrones (inteligencia heurística).
@@ -207,7 +208,7 @@ function conIndice(zonas: Omit<Zona, "indice" | "nivel">[]): Zona[] {
 const TAM_LAT = 0.00225;
 const TAM_LNG = 0.0027;
 
-export function analizarPatrones(todos: Procedimiento[], ahora = Date.now(), ventanaDias = 84): AnalisisPatrones {
+export function analizarPatrones(todos: Procedimiento[], ahora = Date.now(), ventanaDias = 84, reportes: Reporte[] = []): AnalisisPatrones {
   const desde = ahora - ventanaDias * DIA;
   const semanas = Math.ceil(ventanaDias / 7);
   const procs = todos.filter((p) => p.estado !== "cancelado" && new Date(p.creadoEn).getTime() >= desde);
@@ -378,6 +379,35 @@ export function analizarPatrones(todos: Procedimiento[], ahora = Date.now(), ven
         zona: `${u.nombre} · ${u.barrio}`,
         franja: u.franja,
       });
+    }
+  }
+
+  // Brechas de cobertura: mucho conflicto y poca presencia preventiva según los reportes de terreno (últimos 28 días).
+  const desdeTerreno = ahora - 28 * DIA;
+  const presencia = reportes.filter((r) => r.tipo !== "procedimiento" && new Date(r.creadoEn).getTime() >= desdeTerreno);
+  if (presencia.length >= 20) {
+    const t = analizarTerreno(reportes, todos, [], desdeTerreno, ahora + 1);
+    for (const b of t.brechas.slice(0, 3)) {
+      const pctConf = Math.round((b.procedimientos / Math.max(1, t.cobertura.reduce((s, c) => s + c.procedimientos, 0))) * 100);
+      const pctPres = Math.round((b.presencia / Math.max(1, t.cobertura.reduce((s, c) => s + c.presencia, 0))) * 100);
+      const linea = `Cobertura preventiva baja: concentra ${pctConf} % de los procedimientos de 28 días y solo ${pctPres} % de los patrullajes preventivos y puntos estáticos (${b.presencia} reportes).`;
+      const existente = recs.find((r) => r.uv === b.uv && (r.tipo === "patrullaje" || r.tipo === "punto_fijo"));
+      if (existente) existente.evidencia.push(linea);
+      else {
+        const u = uvs.find((x) => Number(x.clave) === b.uv);
+        recs.push({
+          id: `cob-${b.uv}`,
+          tipo: "patrullaje",
+          titulo: `Sumar patrullaje preventivo en ${b.nombre} · ${b.barrio}`,
+          resumen: "Los equipos pasan poco por aquí en comparación con los procedimientos que ocurren. Incluirla en las rondas preventivas.",
+          evidencia: [linea, ...(u ? [`Franja con más casos: ${textoFranja(u.franja)}, sobre todo ${textoDias(u.diasTop)}.`] : [])],
+          prioridad: 2,
+          confianza: confianzaDe(b.procedimientos),
+          zona: `${b.nombre} · ${b.barrio}`,
+          uv: b.uv,
+          franja: u?.franja,
+        });
+      }
     }
   }
 

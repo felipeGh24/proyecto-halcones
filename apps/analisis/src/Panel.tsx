@@ -54,8 +54,8 @@ export function Panel() {
   const topUV = useMemo(() => ranking(actual, (p) => p.unidadVecinal, 8), [actual]);
   const barrioDe = (uv: number) => actual.find((p) => p.unidadVecinal === uv)?.barrio ?? "";
   const cumpleAlerta = r.cumplimiento != null && r.cumplimiento < 0.6;
-  const { procedimientos } = useDatos();
-  const destacadas = useMemo(() => analizarPatrones(procedimientos).recomendaciones.slice(0, 3), [procedimientos]);
+  const { procedimientos, reportes } = useDatos();
+  const destacadas = useMemo(() => analizarPatrones(procedimientos, Date.now(), 84, reportes).recomendaciones.slice(0, 3), [procedimientos, reportes]);
   const porTurno = useMemo(() => {
     const g = (Object.keys(TURNOS) as Turno[]).map((t) => ({ etiqueta: TURNOS[t].etiqueta, rojo: 0, amarillo: 0, verde: 0, t }));
     actual.forEach((p) => g.find((x) => x.t === turnoDe(p.creadoEn))![infoDeClave(p.claveNumero).semaforo]++);

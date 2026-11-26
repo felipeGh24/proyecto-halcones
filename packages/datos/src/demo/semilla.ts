@@ -242,7 +242,8 @@ export function generarDemo(ahora = Date.now(), dias = 90, semilla = 2026): Dato
     { id: "pers-2", usuarioId: "u-demo-p2", patrullero: "Patrullero 42", acompanante: "", modalidad: "punto_fijo", lugar: "Punto fijo de ejemplo · UV 02", ubicacion: puntoEnUV(azar, 2), iniciadoEn: inicioTurno },
     { id: "pers-3", usuarioId: "u-demo-p3", patrullero: "Patrullero 43", acompanante: "Patrullero 44", modalidad: "a_pie", lugar: "Patrullaje a pie · UV 30", ubicacion: puntoEnUV(azar, 30), iniciadoEn: inicioTurno },
   ];
-  return { procedimientos, moviles, personal, historialTurnos: [], reportes: [], secuencia, secuenciaReportes: 0 };
+  const { reportes, historialTurnos } = generarTerreno(azar, procedimientos, ahora, Math.min(dias, 45));
+  return { procedimientos, moviles, personal, historialTurnos, reportes, secuencia, secuenciaReportes: reportes.length };
 
   function historico(azar: Azar, n: number, t0: number, foco?: { uv: number; claves: number[]; radio: number }): Procedimiento {
     const clave = foco ? obtenerClave(foco.claves[Math.floor(azar() * foco.claves.length)])! : elegirPonderado(azar, CLAVES_DEMO, PESOS_DEMO);
@@ -301,4 +302,93 @@ function cercaDe(azar: Azar, c: Punto, metros: number): Punto {
 
 export function folio(n: number): string {
   return `P-${String(n).padStart(6, "0")}`;
+}
+
+/** Presencia preventiva de ejemplo: deliberadamente baja en UV 36 y 23 para que aparezcan brechas de cobertura. */
+const PESO_PRESENCIA = UVS.map((uv) => ([36, 23].includes(uv) ? 0.3 : [2, 5, 11, 17, 30, 41].includes(uv) ? 4 : [8, 14, 27, 44].includes(uv) ? 2 : 1));
+const NOVEDADES_DEMO = ["Neumáticos", "Luces y baliza", "Carrocería", "Radio", "Sirena"];
+const OBS_PREVENTIVO = ["Sin novedad en el sector.", "Se recorre plaza y alrededores, sin novedad.", "Se conversa con vecinos; reportan luminaria apagada.", "Vehículo abandonado en pasaje, se informa.", "Grupo en esquina se retira al paso del móvil."];
+
+function generarTerreno(azar: Azar, procedimientos: Procedimiento[], ahora: number, dias: number): { reportes: Reporte[]; historialTurnos: RegistroTurno[] } {
+  const reportes: Reporte[] = [];
+  const historialTurnos: RegistroTurno[] = [];
+  const HORA = 3600000;
+  let n = 0;
+  const nuevo = (r: Omit<Reporte, "id" | "folio" | "leidoPorCentral" | "complementos" | "adjuntos"> & { adjuntos?: Reporte["adjuntos"] }) => {
+    n++;
+    reportes.push({ adjuntos: [], ...r, id: `REP-demo-${n}`, folio: `R-${String(n).padStart(5, "0")}`, leidoPorCentral: true, complementos: [] });
+  };
+  for (let d = dias - 1; d >= 0; d--) {
+    const inicioDia = Math.floor((ahora - d * 86400000) / 86400000) * 86400000 + 3 * HORA;
+    // Turnos cerrados: día (08–20) y noche (20–08) de seis móviles.
+    for (const [k, base] of MOVILES_BASE.slice(0, 6).entries())
+      for (const h0 of [8, 20]) {
+        const ini = inicioDia + h0 * HORA;
+        const fin = ini + 12 * HORA;
+        if (fin > ahora) continue;
+        const km0 = 40000 + k * 9000 + (dias - d) * 160;
+        historialTurnos.push({
+          id: `TUR-demo-${base.id}-${d}-${h0}`,
+          usuarioId: `u-demo-${k}`,
+          patrullero: `Patrullero ${String(k + 1 + (h0 === 20 ? 10 : 0)).padStart(2, "0")}`,
+          acompanante: "",
+          modalidad: "movil",
+          unidad: base.nombre,
+          iniciadoEn: new Date(ini).toISOString(),
+          cerradoEn: new Date(fin).toISOString(),
+          kmInicial: km0,
+          kmFinal: km0 + Math.round(entre(azar, 45, 110)),
+          combustibleFinal: azar() < 0.3 ? "1/4" : "1/2",
+          novedadesChecklist: azar() < 0.18 ? [NOVEDADES_DEMO[Math.floor(azar() * NOVEDADES_DEMO.length)]] : [],
+          observaciones: "",
+        });
+      }
+    const cantidad = Math.round(entre(azar, 6, 10));
+    for (let i = 0; i < cantidad; i++) {
+      const t = inicioDia + elegirPonderado(azar, PESO_HORA.map((_, k) => k), PESO_HORA) * HORA + azar() * HORA;
+      if (t > ahora) continue;
+      const estatico = azar() < 0.2;
+      const uv = estatico ? [41, 2, 30][Math.floor(azar() * 3)] : elegirPonderado(azar, UVS, PESO_PRESENCIA);
+      const ubicacion = puntoEnUV(azar, uv);
+      const props = unidadVecinalDe(ubicacion);
+      const halcon = String(1 + Math.floor(azar() * 18));
+      nuevo({
+        creadoEn: new Date(t).toISOString(),
+        usuarioId: `u-demo-h${halcon}`,
+        patrullero: `Patrullero ${halcon.padStart(2, "0")}`,
+        halcon,
+        unidad: estatico ? `Punto fijo · UV ${String(uv).padStart(2, "0")}` : MOVILES_BASE[Math.floor(azar() * 6)].nombre,
+        tipo: estatico ? "punto_estatico" : "patrullaje_preventivo",
+        direccion: `Sector ${props?.nombre ?? `UV ${uv}`}`,
+        ubicacion,
+        unidadVecinal: props?.uv ?? null,
+        barrio: props?.barrio ?? null,
+        procedimientoId: null,
+        observaciones: OBS_PREVENTIVO[Math.floor(azar() * OBS_PREVENTIVO.length)],
+      });
+    }
+  }
+  // Reporte de cierre para cerca de la mitad de los procedimientos finalizados del periodo.
+  const desde = ahora - dias * 86400000;
+  for (const p of procedimientos) {
+    if (p.estado !== "finalizado" || !p.movilId || new Date(p.creadoEn).getTime() < desde || azar() > 0.5) continue;
+    const fin = p.eventos[p.eventos.length - 1]?.en ?? p.creadoEn;
+    const halcon = String(1 + Math.floor(azar() * 18));
+    nuevo({
+      creadoEn: fin,
+      usuarioId: `u-demo-h${halcon}`,
+      patrullero: `Patrullero ${halcon.padStart(2, "0")}`,
+      halcon,
+      unidad: MOVILES_BASE.find((m) => m.id === p.movilId)?.nombre ?? p.movilId,
+      tipo: "procedimiento",
+      direccion: p.direccion,
+      ubicacion: p.ubicacion,
+      unidadVecinal: p.unidadVecinal,
+      barrio: p.barrio,
+      procedimientoId: p.id,
+      observaciones: p.resultado ?? "Procedimiento finalizado.",
+    });
+  }
+  reportes.sort((a, b) => (a.creadoEn < b.creadoEn ? 1 : -1));
+  return { reportes, historialTurnos: historialTurnos.reverse() };
 }

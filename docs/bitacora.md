@@ -141,3 +141,16 @@ Cada sesión agrega una entrada arriba: fecha, sistema, qué se hizo, qué qued�
 - Central: bandeja «Reportes de terreno» con no leídos.
 - Adjuntos de la demo se guardan en IndexedDB del navegador; en producción irán a Supabase Storage con acceso por rol.
 - 26 pruebas pasan; flujo completo verificado en Chrome sin errores.
+
+## 7 · 26-11-2026 (tarde) — Mejoras por iniciativa propia: direcciones, terreno, celular y base de datos
+
+- **Dirección → punto automático.** Escribir «Independencia 3499» o «Independencia con La Palma» muestra sugerencias solo dentro de Conchalí; al elegir, se marca el punto, se calcula la UV y se asigna el móvil más cercano. Al hacer clic en el mapa se propone la dirección (calle y número). Mismo buscador en el reporte del patrullero; con GPS se propone la dirección donde está. Sin internet o sin servicio, el campo sigue siendo texto y el punto se marca a mano.
+- **Recintos GAMA:** botón «Ubicar N automáticamente» en Georreferenciado (calcula el cruce de las dos calles); en Nuevo procedimiento, elegir un recinto sin ubicar intenta ubicarlo por su esquina y lo guarda.
+- **Análisis › Trabajo en terreno (nuevo):** reportes por día y tipo, mapa de calor por hora, reportes por halcón, novedades de los móviles, km y horas de servicio, y el gráfico «¿Patrullamos donde está el conflicto?» (UV bajo la diagonal = menos presencia preventiva que conflicto), con tabla «Dónde sumar rondas».
+- **Motor de patrones:** usa los reportes; si una UV concentra procedimientos y casi no tiene patrullaje preventivo, lo agrega como evidencia o recomienda sumar rondas (solo con ≥ 20 reportes preventivos en 28 días, para no inventar brechas).
+- **Mapa en vivo:** capa de reportes de terreno de las últimas 12 h (PP, PE, PR).
+- **Celular:** fotos comprimidas a 1920 px JPEG antes de guardar (de 4–8 MB a ~0,5 MB); botones «Tomar foto», «Grabar video» y «Galería»; la app del patrullero ya no descarga el mapa (de 1,3 MB a ~0,37 MB de JavaScript); avisos arriba y máximo dos.
+- **Central › Reportes:** búsqueda, filtro por tipo, fecha en reportes de otros días y paginación.
+- **Datos de ejemplo:** 45 días de reportes y turnos cerrados ficticios.
+- **Base de datos:** `0002_reportes_y_adjuntos.sql` con reportes, complementos, evidencias, checklist, cambio de móvil, un turno abierto por persona y por móvil, RLS, bucket privado «evidencias» y vista para Power BI sin nombres.
+- 34 pruebas pasan; flujo completo verificado en Chrome (buscador simulado, porque el entorno de prueba no tiene internet).

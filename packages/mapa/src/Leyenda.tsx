@@ -29,6 +29,11 @@ export function LeyendaMapa() {
         <i className="cuadro" style={{ background: "#fff", borderColor: "#0F766E", borderWidth: 2 }} />
         Punto fijo o a pie
       </span>
+      <strong>Reportes de terreno</strong>
+      <span>
+        <i className="cuadro" style={{ background: "#fff", borderColor: "#1D4ED8", borderWidth: 2 }} />
+        PP preventivo · PE punto estático · PR procedimiento
+      </span>
     </div>
   );
 }

@@ -2,9 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import { guardarArchivo, tamano, urlDeAdjunto, type Adjunto } from "@plataforma/datos";
 import { Icono } from "./Icono";
 
-/** Botón para agregar fotos o videos (en el celular abre la cámara o la galería). */
-export function SelectorAdjuntos({ adjuntos, onCambio, etiqueta = "Agregar fotos o videos" }: { adjuntos: Adjunto[]; onCambio: (a: Adjunto[]) => void; etiqueta?: string }) {
-  const entrada = useRef<HTMLInputElement>(null);
+const ORIGENES = [
+  { id: "foto", texto: "Tomar foto", icono: "ojo", accept: "image/*", capture: "environment", multiple: false },
+  { id: "video", texto: "Grabar video", icono: "pantalla", accept: "video/*", capture: "environment", multiple: false },
+  { id: "galeria", texto: "Galería", icono: "mas", accept: "image/*,video/*", capture: undefined, multiple: true },
+] as const;
+
+/**
+ * Fotos y videos: en el celular, «Tomar foto» y «Grabar video» abren directo la cámara trasera;
+ * «Galería» permite elegir varios archivos. Las fotos se comprimen antes de guardarse.
+ */
+export function SelectorAdjuntos({ adjuntos, onCambio, etiqueta }: { adjuntos: Adjunto[]; onCambio: (a: Adjunto[]) => void; etiqueta?: string }) {
+  const entradas = useRef<Record<string, HTMLInputElement | null>>({});
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
 
@@ -25,20 +34,32 @@ export function SelectorAdjuntos({ adjuntos, onCambio, etiqueta = "Agregar fotos
 
   return (
     <div className="adjuntos">
-      <button type="button" className="ui-boton ui-boton--secundario adjuntos__boton" onClick={() => entrada.current?.click()} disabled={cargando}>
-        <Icono nombre="mas" /> {cargando ? "Guardando…" : etiqueta}
-      </button>
-      <input
-        ref={entrada}
-        type="file"
-        accept="image/*,video/*"
-        multiple
-        hidden
-        onChange={(e) => {
-          if (e.target.files?.length) void agregar(e.target.files);
-          e.target.value = "";
-        }}
-      />
+      {etiqueta && <span className="ui-campo__etiqueta">{etiqueta}</span>}
+      <div className="adjuntos__botones" role="group" aria-label="Agregar fotos o videos">
+        {ORIGENES.map((o) => (
+          <span key={o.id}>
+            <button type="button" className="ui-boton ui-boton--secundario adjuntos__boton" onClick={() => entradas.current[o.id]?.click()} disabled={cargando}>
+              <Icono nombre={o.icono} /> {o.texto}
+            </button>
+            <input
+              ref={(el) => {
+                entradas.current[o.id] = el;
+              }}
+              data-origen={o.id}
+              type="file"
+              accept={o.accept}
+              capture={o.capture}
+              multiple={o.multiple}
+              hidden
+              onChange={(e) => {
+                if (e.target.files?.length) void agregar(e.target.files);
+                e.target.value = "";
+              }}
+            />
+          </span>
+        ))}
+      </div>
+      {cargando && <span className="ui-campo__ayuda" role="status">Optimizando y guardando…</span>}
       {error && <span className="ui-campo__error">{error}</span>}
       {adjuntos.length > 0 && <VistaAdjuntos adjuntos={adjuntos} onQuitar={(id) => onCambio(adjuntos.filter((a) => a.id !== id))} />}
     </div>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { analizarPatrones, esActivo, leerPuntosInteres, ubicarPunto, normalizar, obtenerClave, useDatos, type PuntoInteres, type Punto } from "@plataforma/datos";
+import { analizarPatrones, esActivo, leerPuntosInteres, ubicarPunto, normalizar, obtenerClave, TIPOS_REPORTE, useDatos, type PuntoInteres, type Punto } from "@plataforma/datos";
 import { CAPAS_INICIALES, EscalaCoropleta, LeyendaBarrios, LeyendaMapa, Mapa, type Capas, type MarcaMapa, type Seleccion } from "@plataforma/mapa";
 import { avisar, Icono, Insignia, Semaforo, useUsuario } from "@plataforma/ui";
 import { MarcoGeo } from "./MarcoGeo";
@@ -22,25 +22,27 @@ const NOMBRES_LUGARES: { clave: keyof Capas; texto: string; color: string }[] = 
   { clave: "municipal", texto: "Edificios municipales del mapa base", color: "#0F766E" },
 ];
 
-type Extras = { colores: boolean; barrios: boolean; uvs: boolean; conflicto: boolean; sugerencias: boolean };
+type Extras = { colores: boolean; barrios: boolean; uvs: boolean; conflicto: boolean; sugerencias: boolean; reportes: boolean };
 const NOMBRES_EXTRAS: { clave: keyof Extras; texto: string }[] = [
   { clave: "colores", texto: "Colores por barrio" },
   { clave: "barrios", texto: "Nombres de barrios (al acercar: números de UV)" },
   { clave: "uvs", texto: "Números de UV siempre visibles" },
   { clave: "conflicto", texto: "Índice de conflicto por UV" },
   { clave: "sugerencias", texto: "Puntos fijos y patrullajes sugeridos" },
+  { clave: "reportes", texto: "Reportes de terreno (últimas 12 h)" },
 ];
+const LETRA_REPORTE = { patrullaje_preventivo: "PP", procedimiento: "PR", punto_estatico: "PE" } as const;
 
 export function EnVivo() {
-  const { procedimientos, moviles, personal } = useDatos();
+  const { procedimientos, moviles, personal, reportes } = useDatos();
   const [capas, setCapas] = useState<Capas>(CAPAS_INICIALES);
   const [puntos, setPuntos] = useState<PuntoInteres[]>(() => leerPuntosInteres());
   const [verPuntos, setVerPuntos] = useState(true);
   const [ubicando, setUbicando] = useState<PuntoInteres | null>(null);
   const usuario = useUsuario();
   const puedeEditarPuntos = usuario.rol === "administrador" || usuario.rol === "supervisor";
-  const [extras, setExtras] = useState<Extras>({ colores: true, barrios: true, uvs: false, conflicto: false, sugerencias: false });
-  const patrones = useMemo(() => (extras.conflicto || extras.sugerencias ? analizarPatrones(procedimientos) : null), [procedimientos, extras.conflicto, extras.sugerencias]);
+  const [extras, setExtras] = useState<Extras>({ colores: true, barrios: true, uvs: false, conflicto: false, sugerencias: false, reportes: true });
+  const patrones = useMemo(() => (extras.conflicto || extras.sugerencias ? analizarPatrones(procedimientos, Date.now(), 84, reportes) : null), [procedimientos, reportes, extras.conflicto, extras.sugerencias]);
   const coropleta = useMemo(() => {
     if (!extras.conflicto || !patrones) return null;
     const max = Math.max(...patrones.uvs.map((u) => u.indice), 1);
@@ -51,7 +53,7 @@ export function EnVivo() {
   const [texto, setTexto] = useState("");
   const [enfoque, setEnfoque] = useState<Punto | null>(null);
 
-  const activos = useMemo(() => procedimientos.filter((p) => esActivo(p.estado)), [procedimientos]);
+  const activos = useMemo(() => procedimientos.filter((p) => esActivo(p.estado)), [procedimientos, reportes]);
   const calor = useMemo(() => {
     if (!capas.calor) return [];
     const desde = Date.now() - 30 * 86400000;
@@ -168,6 +170,18 @@ export function EnVivo() {
             marcas={[
               ...(capas.moviles ? personal.map((p) => ({ id: p.id, punto: p.ubicacion, tipo: "personal" as const, texto: p.modalidad === "punto_fijo" ? "PF" : "A pie", titulo: `${p.patrullero} · ${p.lugar}` })) : []),
               ...marcas,
+              ...(extras.reportes
+                ? reportes
+                    .filter((r) => r.ubicacion && Date.now() - new Date(r.creadoEn).getTime() < 12 * 3600000)
+                    .slice(0, 60)
+                    .map((r) => ({
+                      id: r.id,
+                      punto: r.ubicacion!,
+                      tipo: "reporte" as const,
+                      texto: LETRA_REPORTE[r.tipo],
+                      titulo: `${r.folio} · ${TIPOS_REPORTE[r.tipo]} · ${r.halcon ? `Halcón ${r.halcon} · ` : ""}${new Date(r.creadoEn).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" })}${r.observaciones ? ` · ${r.observaciones.slice(0, 80)}` : ""}`,
+                    }))
+                : []),
             ]}
             colorBarrios={extras.colores}
             puntosInteres={verPuntos ? puntos : []}

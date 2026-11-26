@@ -11,21 +11,21 @@ import { NuevoProcedimiento } from "./NuevoProcedimiento";
 const DOCE_HORAS = 12 * 3600 * 1000;
 
 export function Tablero() {
-  const { procedimientos, moviles, personal } = useDatos();
+  const { procedimientos, moviles, personal, reportes } = useDatos();
   const usuario = useUsuario();
   const [seleccion, setSeleccion] = useState<Seleccion>(null);
   const [creando, setCreando] = useState(false);
   const [simular, setSimular] = useState(false);
   const puedeCrear = puede(usuario.rol, "crear_procedimiento");
 
-  const activos = useMemo(() => ordenarCola(procedimientos.filter((p) => esActivo(p.estado))), [procedimientos]);
+  const activos = useMemo(() => ordenarCola(procedimientos.filter((p) => esActivo(p.estado))), [procedimientos, reportes]);
   const urgentesSinDespacho = activos.filter((p) => p.estado === "recibido" && infoDeClave(p.claveNumero).semaforo === "rojo").length;
   const disponibles = moviles.filter((m) => m.estado === "disponible").length;
   const enTurno = moviles.filter((m) => m.turno).length;
   const turno = useMemo(() => {
     const desde = Date.now() - DOCE_HORAS;
     return resumen(procedimientos.filter((p) => new Date(p.creadoEn).getTime() >= desde));
-  }, [procedimientos]);
+  }, [procedimientos, reportes]);
 
   // Atajo: N abre un procedimiento nuevo.
   useEffect(() => {
@@ -46,7 +46,7 @@ export function Tablero() {
     return () => clearInterval(t);
   }, [simular]);
 
-  const sugerencias = useMemo(() => analizarPatrones(procedimientos).recomendaciones.filter((r) => r.tipo !== "respuesta").slice(0, 4), [procedimientos]);
+  const sugerencias = useMemo(() => analizarPatrones(procedimientos, Date.now(), 84, reportes).recomendaciones.filter((r) => r.tipo !== "respuesta").slice(0, 4), [procedimientos, reportes]);
 
   const procSel = seleccion?.tipo === "procedimiento" ? procedimientos.find((p) => p.id === seleccion.id) : undefined;
   const movilSel = seleccion?.tipo === "movil" ? moviles.find((m) => m.id === seleccion.id) : undefined;

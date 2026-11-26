@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { GRUPOS_PUNTO, guardarPuntosPropios, leerCsvPuntos, PLANTILLA_CSV, puntosACsv, type GrupoPunto, type PuntoInteres } from "@plataforma/datos";
+import { geocodificadorActivo, GRUPOS_PUNTO, guardarPuntosPropios, ubicarPunto, ubicarRecintosAutomaticamente, leerCsvPuntos, PLANTILLA_CSV, puntosACsv, type GrupoPunto, type PuntoInteres } from "@plataforma/datos";
 import { avisar, Boton, Insignia } from "@plataforma/ui";
 
 function descargar(nombre: string, contenido: string) {
@@ -35,6 +35,19 @@ export function PuntosPropios({
   const archivo = useRef<HTMLInputElement>(null);
   const [errores, setErrores] = useState<string[]>([]);
   const faltan = puntos.filter((p) => !p.ubicacion).length;
+  const [auto, setAuto] = useState<{ hechos: number; total: number } | null>(null);
+
+  async function ubicarSolos() {
+    setAuto({ hechos: 0, total: faltan });
+    const r = await ubicarRecintosAutomaticamente(puntos, (id, p) => ubicarPunto(id, p), (hechos, total) => setAuto({ hechos, total }));
+    setAuto(null);
+    onRecargar();
+    avisar(
+      r.pendientes.length
+        ? `${r.ubicados.length} ubicados automáticamente; ${r.pendientes.length} no se encontraron y hay que ubicarlos a mano`
+        : `${r.ubicados.length} recintos ubicados automáticamente. Revisa que cada punto esté en la esquina correcta.`,
+    );
+  }
 
   async function cargar(f: File) {
     const { puntos: nuevos, errores: e } = leerCsvPuntos(await f.text());
@@ -53,7 +66,19 @@ export function PuntosPropios({
         <input type="checkbox" checked={visibles} onChange={(e) => onVisibles(e.target.checked)} />
         <span>Mostrar en el mapa</span>
       </label>
-      {faltan > 0 && <p className="pequeno recintos__aviso">{faltan} sin ubicar todavía{puedeEditar ? ": usa «Ubicar» y haz clic en la esquina correcta del mapa." : ". Un administrador o supervisor debe ubicarlos."}</p>}
+      {faltan > 0 && (
+        <div className="recintos__aviso">
+          <p className="pequeno">
+            {faltan} sin ubicar todavía
+            {puedeEditar ? ". Ubícalos solos desde su esquina, o uno por uno con «Ubicar»." : ". Un administrador o supervisor debe ubicarlos."}
+          </p>
+          {puedeEditar && geocodificadorActivo() && (
+            <Boton variante="primario" icono="pin" disabled={!!auto} onClick={() => void ubicarSolos()}>
+              {auto ? `Ubicando ${Math.min(auto.hechos + 1, auto.total)} de ${auto.total}…` : `Ubicar ${faltan} automáticamente`}
+            </Boton>
+          )}
+        </div>
+      )}
       {(Object.keys(GRUPOS_PUNTO) as GrupoPunto[]).map((g) => {
         const lista = puntos.filter((p) => p.grupo === g);
         if (!lista.length) return null;

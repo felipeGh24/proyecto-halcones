@@ -18,10 +18,37 @@ function abrir(): Promise<IDBDatabase> {
   });
 }
 
-export async function guardarArchivo(f: File): Promise<Adjunto> {
-  const tipo = f.type.startsWith("video/") ? "video" : f.type.startsWith("image/") ? "imagen" : null;
-  if (!tipo) throw new Error(`«${f.name}» no es una foto ni un video.`);
-  if (f.size > MAX_BYTES) throw new Error(`«${f.name}» pesa más de ${MAX_BYTES / 1024 / 1024} MB.`);
+/** Lado mayor de las fotos guardadas: suficiente para leer patentes y ver daños, sin gastar datos móviles. */
+export const LADO_MAXIMO_FOTO = 1920;
+
+/**
+ * Reduce una foto del celular (4–8 MB) a ~300–600 KB en JPEG.
+ * Si el navegador no puede (formato raro, sin canvas), se guarda la original.
+ */
+export async function comprimirFoto(f: File, lado = LADO_MAXIMO_FOTO, calidad = 0.82): Promise<Blob> {
+  if (!f.type.startsWith("image/") || f.type === "image/gif" || f.size < 400 * 1024) return f;
+  try {
+    const bmp = await createImageBitmap(f, { imageOrientation: "from-image" } as ImageBitmapOptions);
+    const k = Math.min(1, lado / Math.max(bmp.width, bmp.height));
+    const w = Math.round(bmp.width * k);
+    const h = Math.round(bmp.height * k);
+    const lienzo = document.createElement("canvas");
+    lienzo.width = w;
+    lienzo.height = h;
+    lienzo.getContext("2d")!.drawImage(bmp, 0, 0, w, h);
+    bmp.close();
+    const blob = await new Promise<Blob | null>((ok) => lienzo.toBlob(ok, "image/jpeg", calidad));
+    return blob && blob.size < f.size ? blob : f;
+  } catch {
+    return f;
+  }
+}
+
+export async function guardarArchivo(original: File): Promise<Adjunto> {
+  const tipo = original.type.startsWith("video/") ? "video" : original.type.startsWith("image/") ? "imagen" : null;
+  if (!tipo) throw new Error(`«${original.name}» no es una foto ni un video.`);
+  if (original.size > MAX_BYTES) throw new Error(`«${original.name}» pesa más de ${MAX_BYTES / 1024 / 1024} MB. Graba un video más corto.`);
+  const f = tipo === "imagen" ? await comprimirFoto(original) : original;
   const id = `adj-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const db = await abrir();
   await new Promise<void>((ok, mal) => {
@@ -30,7 +57,7 @@ export async function guardarArchivo(f: File): Promise<Adjunto> {
     tx.oncomplete = () => ok();
     tx.onerror = () => mal(tx.error);
   });
-  return { id, nombre: f.name, tipo, bytes: f.size };
+  return { id, nombre: original.name, tipo, bytes: f.size };
 }
 
 const urls = new Map<string, string>();

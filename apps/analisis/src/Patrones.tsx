@@ -1,3 +1,4 @@
+import workerMapa from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { useMemo, useState } from "react";
 import {
   analizarPatrones,
@@ -13,10 +14,13 @@ import {
   type Punto,
   type Recomendacion,
 } from "@plataforma/datos";
-import { EscalaCoropleta, Mapa, type MarcaMapa } from "@plataforma/mapa";
+import { configurarWorkerMapa, EscalaCoropleta, Mapa, type MarcaMapa } from "@plataforma/mapa";
 import { Icono, Insignia, Segmentos, Tarjeta } from "@plataforma/ui";
 import { BarrasIndice, Sparkline } from "./graficos";
 import { MarcoAnalisis } from "./MarcoAnalisis";
+
+// El mapa solo se carga al abrir Patrones: el panel de jefatura abre más rápido.
+configurarWorkerMapa(workerMapa);
 
 const TONO: Record<Recomendacion["tipo"], "ok" | "info" | "alerta" | "neutro"> = {
   punto_fijo: "ok",
@@ -29,8 +33,8 @@ type Vista = "indice" | "alza";
 
 /** Patrones e inteligencia heurística: dónde hace falta patrullaje, punto fijo o refuerzo, y por qué. */
 export function Patrones() {
-  const { procedimientos } = useDatos();
-  const a = useMemo(() => analizarPatrones(procedimientos), [procedimientos]);
+  const { procedimientos, reportes } = useDatos();
+  const a = useMemo(() => analizarPatrones(procedimientos, Date.now(), 84, reportes), [procedimientos, reportes]);
   const [enfoque, setEnfoque] = useState<Punto | null>(null);
   const [abierta, setAbierta] = useState<string | null>(a.recomendaciones[0]?.id ?? null);
   const [vista, setVista] = useState<Vista>("indice");

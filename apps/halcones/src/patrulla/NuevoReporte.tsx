@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  direccionDe,
   esActivo,
   obtenerClave,
   obtenerCliente,
@@ -11,7 +12,7 @@ import {
   type Punto,
   type TipoReporte,
 } from "@plataforma/datos";
-import { avisar, Boton, Campo, Modal, Segmentos, SelectorAdjuntos, useUsuario } from "@plataforma/ui";
+import { avisar, Boton, Campo, EntradaDireccion, Modal, Segmentos, SelectorAdjuntos, useUsuario } from "@plataforma/ui";
 import { posicionActual, type TurnoActual } from "./turnoActual";
 
 /**
@@ -40,7 +41,13 @@ export function NuevoReporte({ turno, procedimientoInicial, onCerrar }: { turno:
       if (!vivo) return;
       if (p && unidadVecinalDe(p)) {
         setGps("ok");
-        if (!procedimientoInicial) setUbicacion(p);
+        if (!procedimientoInicial) {
+          setUbicacion(p);
+          // Con GPS, propone la dirección donde está el patrullero (si no la escribió él).
+          void direccionDe(p).then((d) => {
+            if (vivo && d) setDireccion((actual) => (actual.trim() && actual !== turno.puesto?.lugar ? actual : d));
+          });
+        }
       } else setGps("sin");
     });
     return () => {
@@ -109,7 +116,7 @@ export function NuevoReporte({ turno, procedimientoInicial, onCerrar }: { turno:
           </Campo>
         )}
         <Campo etiqueta="Dirección" htmlFor="dir-rep">
-          <input id="dir-rep" className="ui-entrada" value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Calle y número, o esquina" />
+          <EntradaDireccion id="dir-rep" valor={direccion} onCambio={setDireccion} onElegir={(s) => setUbicacion(s.punto)} placeholder="Calle y número, o esquina" />
         </Campo>
         <div className="dos-columnas">
           <div className="dato">

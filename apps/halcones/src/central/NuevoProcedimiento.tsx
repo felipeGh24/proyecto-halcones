@@ -1,7 +1,7 @@
-import { useState, type FormEvent } from "react";
-import { centroideUV, historialCercano, leerPuntosInteres, obtenerClave, movilesCercanos, obtenerCliente, puede, UNIDADES_VECINALES, unidadVecinalDe, useDatos, type Punto } from "@plataforma/datos";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { buscarEsquina, centroideUV, direccionDe, partirEsquina, ubicarPunto, historialCercano, leerPuntosInteres, obtenerClave, movilesCercanos, obtenerCliente, puede, UNIDADES_VECINALES, unidadVecinalDe, useDatos, type Punto } from "@plataforma/datos";
 import { Mapa } from "@plataforma/mapa";
-import { avisar, Boton, Campo, Modal, useUsuario } from "@plataforma/ui";
+import { avisar, Boton, Campo, EntradaDireccion, Modal, useUsuario } from "@plataforma/ui";
 import { BuscadorClave } from "./BuscadorClave";
 import { ListaDespacho } from "./ListaDespacho";
 
@@ -24,6 +24,27 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
   const [puntos] = useState(() => leerPuntosInteres());
   const [avisoRecinto, setAvisoRecinto] = useState("");
   const [verLista, setVerLista] = useState(false);
+  // La dirección la escribe el operador; si la propuso el sistema, se puede reemplazar al mover el punto.
+  const direccionPropuesta = useRef(true);
+  const origenPunto = useRef<"mapa" | "direccion">("mapa");
+
+  useEffect(() => {
+    if (!punto || origenPunto.current !== "mapa") return;
+    const ctl = new AbortController();
+    direccionDe(punto, ctl.signal).then((d) => {
+      if (d && (direccionPropuesta.current || !direccion.trim())) {
+        setDireccion(d);
+        direccionPropuesta.current = true;
+      }
+    });
+    return () => ctl.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [punto]);
+
+  function marcarEnMapa(p: Punto) {
+    origenPunto.current = "mapa";
+    setPunto(p);
+  }
   const uv = punto ? unidadVecinalDe(punto) : null;
   const historial = punto ? historialCercano(procedimientos, punto) : null;
   const masCercano = punto ? movilesCercanos(moviles, punto, 1)[0] : undefined;
@@ -55,7 +76,7 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
     <Modal
       ancho
       titulo="Nuevo procedimiento"
-      subtitulo="Clave, punto exacto y dirección. El resto lo completa el sistema."
+      subtitulo="Clave, dirección y descripción. El punto, la unidad vecinal y el móvil los completa el sistema."
       onCerrar={onCerrar}
       pie={
         <>
@@ -64,7 +85,7 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
             {puedeDespachar ? "Crear sin despachar" : "Crear"}
           </Boton>
           {puedeDespachar && (
-            <Boton variante="primario" icono="enviar" onClick={() => crear(true)} disabled={!destino} title={destino ? "" : punto ? "No hay móviles libres con patrullero en turno" : "Marca el punto en el mapa para asignar el móvil más cercano"}>
+            <Boton variante="primario" icono="enviar" onClick={() => crear(true)} disabled={!destino} title={destino ? "" : punto ? "No hay móviles libres con patrullero en turno" : "Elige la dirección sugerida o marca el punto en el mapa"}>
               Crear y despachar{destino ? ` a ${destino.nombre}` : ""}
             </Boton>
           )}
@@ -80,8 +101,24 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
       >
         <div className="nuevo__datos">
           <BuscadorClave valor={clave} onElegir={setClave} error={errores.clave} />
-          <Campo etiqueta="Dirección" htmlFor="direccion" error={errores.direccion} ayuda="Calle y número, o esquina. Al marcar el punto se propone la calle más cercana.">
-            <input id="direccion" className={`ui-entrada nuevo__direccion ${errores.direccion ? "ui-entrada--error" : ""}`} value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Calle, número y referencia" autoComplete="off" />
+          <Campo etiqueta="Dirección" htmlFor="direccion" error={errores.direccion} ayuda="Escribe calle y número o una esquina y elige la sugerencia: el punto se marca solo. También puedes hacer clic en el mapa.">
+            <EntradaDireccion
+              id="direccion"
+              grande
+              valor={direccion}
+              error={!!errores.direccion}
+              onCambio={(t) => {
+                direccionPropuesta.current = false;
+                setDireccion(t);
+              }}
+              onElegir={(s) => {
+                origenPunto.current = "direccion";
+                direccionPropuesta.current = false;
+                setPunto(s.punto);
+                setEnfoque({ ...s.punto });
+                setErrores((e) => ({ ...e, punto: "", direccion: "" }));
+              }}
+            />
           </Campo>
           <Campo etiqueta="Descripción" htmlFor="descripcion" ayuda="Qué pasa, en pocas palabras. Evita datos personales que no sean necesarios.">
             <textarea id="descripcion" className="ui-entrada" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={500} />
@@ -90,7 +127,7 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
             <section className="asignacion" aria-label="Asignación del móvil">
               <span className="ui-campo__etiqueta">Móvil asignado automáticamente</span>
               {!punto ? (
-                <span className="ui-campo__ayuda">Marca el punto en el mapa: el sistema elige el móvil libre con patrullero en turno más cercano.</span>
+                <span className="ui-campo__ayuda">Elige una dirección sugerida o marca el punto en el mapa: el sistema asigna el móvil libre con patrullero en turno más cercano.</span>
               ) : destino ? (
                 <div className="asignacion__elegido">
                   <div>
@@ -141,11 +178,26 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
                 if (!r) return;
                 setDireccion(`${r.codigo ? `${r.codigo} · ` : ""}${r.nombre} (${r.direccion})`);
                 if (r.ubicacion) {
+                  origenPunto.current = "direccion";
                   setPunto({ ...r.ubicacion });
                   setEnfoque({ ...r.ubicacion });
                   setAvisoRecinto("");
                 } else {
-                  setAvisoRecinto("Este recinto aún no está ubicado en el mapa: marca el punto a mano. Un supervisor puede ubicarlo en Georreferenciado.");
+                  // Intenta ubicarlo por su esquina y lo deja guardado para la próxima vez.
+                  setAvisoRecinto("Buscando la esquina del recinto…");
+                  const esq = partirEsquina(r.direccion);
+                  void (esq ? buscarEsquina(esq[0], esq[1]) : Promise.resolve(null))
+                    .catch(() => null)
+                    .then((s) => {
+                      if (s) {
+                        ubicarPunto(r.id, s.punto);
+                        r.ubicacion = s.punto;
+                        origenPunto.current = "direccion";
+                        setPunto({ ...s.punto });
+                        setEnfoque({ ...s.punto });
+                        setAvisoRecinto("Ubicado por su esquina. Revisa el punto y arrástralo si hace falta.");
+                      } else setAvisoRecinto("No encontré la esquina: marca el punto a mano. Un supervisor puede ubicarlo en Georreferenciado.");
+                    });
                 }
               }}
             >
@@ -171,11 +223,14 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
               compacto
               moviles={moviles}
               marcador={punto}
-              onMoverMarcador={setPunto}
-              onClicMapa={setPunto}
+              onMoverMarcador={marcarEnMapa}
+              onClicMapa={marcarEnMapa}
               onCalle={(c) => {
                 setCalle(c);
-                if (c && !direccion.trim()) setDireccion(`${c} (completar número)`);
+                if (c && (!direccion.trim() || direccionPropuesta.current)) {
+                  setDireccion(`${c} (completar número)`);
+                  direccionPropuesta.current = true;
+                }
               }}
               enfocar={enfoque}
               etiquetas={{ barrios: true }}

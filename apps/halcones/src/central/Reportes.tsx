@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { fechaHora, hora, obtenerClave, obtenerCliente, TIPOS_REPORTE, useDatos, type Reporte } from "@plataforma/datos";
+import { fechaHora, hora, normalizar, obtenerClave, obtenerCliente, TIPOS_REPORTE, useDatos, type Reporte, type TipoReporte } from "@plataforma/datos";
 import { Insignia, Segmentos, Vacio, VistaAdjuntos } from "@plataforma/ui";
 import { MarcoCentral } from "./MarcoCentral";
 
@@ -10,7 +10,19 @@ export function Reportes() {
   const { reportes, procedimientos } = useDatos();
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [abierto, setAbierto] = useState<string | null>(null);
-  const lista = reportes.filter((r) => filtro === "todos" || !r.leidoPorCentral);
+  const [tipo, setTipo] = useState<TipoReporte | "">("");
+  const [texto, setTexto] = useState("");
+  const [limite, setLimite] = useState(100);
+  const q = normalizar(texto.trim());
+  const filtrados = reportes.filter(
+    (r) =>
+      (filtro === "todos" || !r.leidoPorCentral) &&
+      (!tipo || r.tipo === tipo) &&
+      (!q || normalizar(`${r.folio} ${r.direccion} ${r.halcon} ${r.unidad} ${r.patrullero} ${r.observaciones} ${r.barrio ?? ""}`).includes(q)),
+  );
+  const lista = filtrados.slice(0, limite);
+  const hoy = new Date().toDateString();
+  const cuando = (iso: string) => (new Date(iso).toDateString() === hoy ? hora(iso) : fechaHora(iso));
   const sel = reportes.find((r) => r.id === abierto) ?? null;
   const sinLeer = reportes.filter((r) => !r.leidoPorCentral).length;
 
@@ -33,6 +45,17 @@ export function Reportes() {
                 { valor: "sin_leer", texto: `Sin leer ${sinLeer}` },
               ]}
             />
+            <div className="reportes__filtros">
+              <input className="ui-entrada" type="search" placeholder="Buscar halcón, dirección, folio…" value={texto} onChange={(e) => setTexto(e.target.value)} aria-label="Buscar reportes" />
+              <select className="ui-entrada" value={tipo} onChange={(e) => setTipo(e.target.value as TipoReporte | "")} aria-label="Tipo de reporte">
+                <option value="">Todos los tipos</option>
+                {(Object.keys(TIPOS_REPORTE) as TipoReporte[]).map((t) => (
+                  <option key={t} value={t}>
+                    {TIPOS_REPORTE[t]}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           {lista.length === 0 ? (
             <Vacio icono="documento" titulo="Sin reportes">
@@ -45,7 +68,7 @@ export function Reportes() {
                   <button type="button" className={`reporte-fila ${r.id === abierto ? "reporte-fila--sel" : ""} ${r.leidoPorCentral ? "" : "reporte-fila--nuevo"}`} onClick={() => abrir(r)}>
                     <span className="reporte-fila__arriba">
                       <strong>{TIPOS_REPORTE[r.tipo]}</strong>
-                      <span className="pequeno texto-3 num">{hora(r.creadoEn)}</span>
+                      <span className="pequeno texto-3 num">{cuando(r.creadoEn)}</span>
                     </span>
                     <span className="pequeno">
                       {r.halcon ? `Halcón ${r.halcon} · ` : ""}
@@ -63,6 +86,11 @@ export function Reportes() {
                 </li>
               ))}
             </ul>
+          )}
+          {filtrados.length > lista.length && (
+            <button type="button" className="ui-boton ui-boton--fantasma reportes__mas" onClick={() => setLimite((l) => l + 100)}>
+              Mostrar más ({filtrados.length - lista.length} restantes)
+            </button>
           )}
         </div>
         <div className="reportes__detalle ui-tarjeta">

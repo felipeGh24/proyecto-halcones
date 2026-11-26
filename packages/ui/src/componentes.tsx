@@ -193,8 +193,9 @@ export function Avisos() {
     let n = 0;
     emitir = (a) => {
       const id = ++n;
-      setLista((l) => [...l, { ...a, id }]);
-      setTimeout(() => setLista((l) => l.filter((x) => x.id !== id)), 5000);
+      // Solo los dos más recientes: en el celular los avisos no deben tapar los botones.
+      setLista((l) => [...l, { ...a, id }].slice(-2));
+      setTimeout(() => setLista((l) => l.filter((x) => x.id !== id)), a.deshacer ? 6000 : 3500);
     };
     return () => {
       emitir = null;

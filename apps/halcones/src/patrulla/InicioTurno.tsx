@@ -187,7 +187,6 @@ export function InicioTurno() {
                         onChange={(e) => setDetalle((d) => ({ ...d, [i]: { descripcion: e.target.value, adjuntos: d[i]?.adjuntos ?? [] } }))}
                       />
                       <SelectorAdjuntos
-                        etiqueta="Foto o video"
                         adjuntos={detalle[i]?.adjuntos ?? []}
                         onCambio={(a) => setDetalle((d) => ({ ...d, [i]: { descripcion: d[i]?.descripcion ?? "", adjuntos: a } }))}
                       />

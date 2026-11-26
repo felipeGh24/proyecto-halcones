@@ -1,13 +1,19 @@
+import { lazy, Suspense, type ComponentType } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { Avisos, PantallaIngreso, PantallaSinAcceso, ProveedorSesion, RutaProtegida, useSesion } from "@plataforma/ui";
-import { Tablero } from "./central/Tablero";
-import { ListaProcedimientos } from "./central/ListaProcedimientos";
-import { Moviles } from "./central/Moviles";
-import { Bitacora } from "./central/Bitacora";
-import { Patrulla } from "./patrulla/Patrulla";
-import { Reportes } from "./central/Reportes";
-import { Claves } from "./central/Claves";
-import { Ajustes } from "./central/Ajustes";
+import { Avisos, Cargando, PantallaIngreso, PantallaSinAcceso, ProveedorSesion, RutaProtegida, useSesion } from "@plataforma/ui";
+
+// Carga diferida: la Central (con el mapa) y la app del patrullero se descargan por separado.
+const central = () => import("./central/rutas");
+const pantalla = <K extends keyof Awaited<ReturnType<typeof central>>>(k: K) =>
+  lazy(async () => ({ default: (await central())[k] as ComponentType }));
+const Tablero = pantalla("Tablero");
+const ListaProcedimientos = pantalla("ListaProcedimientos");
+const Moviles = pantalla("Moviles");
+const Bitacora = pantalla("Bitacora");
+const Reportes = pantalla("Reportes");
+const Claves = pantalla("Claves");
+const Ajustes = pantalla("Ajustes");
+const Patrulla = lazy(async () => ({ default: (await import("./patrulla/Patrulla")).Patrulla }));
 
 const CENTRAL = ["administrador", "jefatura", "supervisor", "operador"] as const;
 
@@ -20,6 +26,7 @@ function Inicio() {
 export function App() {
   return (
     <ProveedorSesion sistema="halcones">
+      <Suspense fallback={<Cargando texto="Cargando…" />}>
       <Routes>
         <Route
           path="/ingreso"
@@ -47,6 +54,7 @@ export function App() {
         <Route path="/patrulla/*" element={<RutaProtegida roles={["patrullero", "administrador"]}><Patrulla /></RutaProtegida>} />
         <Route path="*" element={<Inicio />} />
       </Routes>
+      </Suspense>
       <Avisos />
     </ProveedorSesion>
   );

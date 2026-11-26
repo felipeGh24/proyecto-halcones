@@ -275,3 +275,140 @@ export function BarrasIndice({ filas }: { filas: { etiqueta: string; indice: num
     </div>
   );
 }
+
+/** Columnas diarias apiladas por serie (p. ej., tipos de reporte), con leyenda. */
+export function ColumnasApiladas<K extends string>({
+  dias,
+  series,
+  unidad,
+}: {
+  dias: ({ fecha: string } & Record<K, number>)[];
+  series: { clave: K; etiqueta: string; color: string }[];
+  unidad: string;
+}) {
+  const W = 720, H = 240, izq = 36, der = 8, arr = 12, aba = 28;
+  const total = (d: Record<K, number>) => series.reduce((s, x) => s + d[x.clave], 0);
+  const ticks = pasos(Math.max(1, ...dias.map(total)));
+  const top = ticks[ticks.length - 1];
+  const ancho = (W - izq - der) / Math.max(1, dias.length);
+  const alto = (v: number) => (v / top) * (H - arr - aba);
+  const cada = Math.ceil(dias.length / 7);
+  return (
+    <figure className="grafico-figura">
+      <svg viewBox={`0 0 ${W} ${H}`} className="grafico" role="img" aria-label={unidad}>
+        {ticks.map((t) => (
+          <g key={t}>
+            <line x1={izq} x2={W - der} y1={H - aba - alto(t)} y2={H - aba - alto(t)} stroke={REJILLA} />
+            <text x={izq - 6} y={H - aba - alto(t) + 4} textAnchor="end" fontSize="11" fill={TEXTO}>
+              {numero(t)}
+            </text>
+          </g>
+        ))}
+        {dias.map((d, i) => {
+          let base = H - aba;
+          const fecha = new Date(d.fecha + "T12:00:00").toLocaleDateString("es-CL", { day: "numeric", month: "short" });
+          return (
+            <g key={d.fecha}>
+              {series.map((s) => {
+                const h = alto(d[s.clave]);
+                base -= h;
+                return h > 0 ? (
+                  <rect key={s.clave} x={izq + i * ancho + ancho * 0.15} y={base} width={Math.max(1, ancho * 0.7)} height={h} fill={s.color}>
+                    <title>{`${fecha} · ${s.etiqueta}: ${d[s.clave]}`}</title>
+                  </rect>
+                ) : null;
+              })}
+              {i % cada === 0 && (
+                <text x={izq + i * ancho + ancho / 2} y={H - 8} textAnchor="middle" fontSize="11" fill={TEXTO}>
+                  {fecha}
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+      <figcaption className="leyenda-grafico">
+        {series.map((s) => (
+          <span key={s.clave}>
+            <i style={{ background: s.color }} aria-hidden /> {s.etiqueta}
+          </span>
+        ))}
+      </figcaption>
+    </figure>
+  );
+}
+
+/**
+ * Conflicto frente a presencia por unidad vecinal.
+ * Cada punto es una UV: a la derecha, más procedimientos; arriba, más patrullaje preventivo.
+ * Bajo la diagonal hay menos presencia de la que corresponde a su conflicto (en rojo las brechas).
+ */
+export function DispersionCobertura({ puntos }: { puntos: { etiqueta: string; x: number; y: number; brecha: boolean }[] }) {
+  const W = 560, H = 360, izq = 48, der = 16, arr = 16, aba = 44;
+  const max = Math.max(0.05, ...puntos.map((p) => Math.max(p.x, p.y)));
+  const ticks = pasos(max * 100).map((t) => t / 100);
+  const top = ticks[ticks.length - 1];
+  const x = (v: number) => izq + (v / top) * (W - izq - der);
+  const y = (v: number) => H - aba - (v / top) * (H - arr - aba);
+  const pct = (v: number) => `${Math.round(v * 100)} %`;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="grafico" role="img" aria-label="Conflicto frente a presencia preventiva por unidad vecinal">
+      {ticks.map((t) => (
+        <g key={t}>
+          <line x1={izq} x2={W - der} y1={y(t)} y2={y(t)} stroke={REJILLA} />
+          <line x1={x(t)} x2={x(t)} y1={arr} y2={H - aba} stroke={REJILLA} />
+          <text x={izq - 6} y={y(t) + 4} textAnchor="end" fontSize="11" fill={TEXTO}>
+            {pct(t)}
+          </text>
+          <text x={x(t)} y={H - aba + 16} textAnchor="middle" fontSize="11" fill={TEXTO}>
+            {pct(t)}
+          </text>
+        </g>
+      ))}
+      <path d={`M${x(0)},${y(0)} L${x(top)},${y(0)} L${x(top)},${y(top)} Z`} fill="#FEF3F2" opacity="0.7" />
+      <line x1={x(0)} y1={y(0)} x2={x(top)} y2={y(top)} stroke={GRIS} strokeDasharray="4 4" />
+      <text x={x(top) - 6} y={y(0) - 8} textAnchor="end" fontSize="11" fill="#B42318">
+        Menos presencia que conflicto
+      </text>
+      <text x={x(top * 0.04)} y={y(top) + 14} fontSize="11" fill={TEXTO}>
+        Presencia de sobra
+      </text>
+      {puntos.map((p) => (
+        <circle key={p.etiqueta} cx={x(p.x)} cy={y(p.y)} r={p.brecha ? 6 : 4.5} fill={p.brecha ? "#B42318" : AZUL} fillOpacity={p.brecha ? 0.9 : 0.55} stroke="#fff">
+          <title>{`${p.etiqueta}: ${pct(p.x)} de los procedimientos, ${pct(p.y)} de la presencia preventiva`}</title>
+        </circle>
+      ))}
+      {etiquetasSinChoque(puntos.filter((p) => p.brecha).map((p) => ({ texto: p.etiqueta, x: x(p.x), y: y(p.y) }))).map((e) => (
+        <g key={e.texto}>
+          {e.dy !== 0 && <line x1={e.x} y1={e.y} x2={e.x + 8} y2={e.y + e.dy} stroke="#B42318" strokeWidth="1" />}
+          <text x={e.x + 9} y={e.y + e.dy + 4} fontSize="11" fontWeight="600" fill="#B42318" paintOrder="stroke" stroke="#fff" strokeWidth="3">
+            {e.texto}
+          </text>
+        </g>
+      ))}
+      <text x={(izq + W - der) / 2} y={H - 6} textAnchor="middle" fontSize="12" fill={TEXTO}>
+        % de los procedimientos de la comuna →
+      </text>
+      <text x={14} y={(arr + H - aba) / 2} textAnchor="middle" fontSize="12" fill={TEXTO} transform={`rotate(-90 14 ${(arr + H - aba) / 2})`}>
+        % del patrullaje preventivo →
+      </text>
+    </svg>
+  );
+}
+
+/** Coloca etiquetas sin que se tapen: si chocan, las sube; si no caben, se omiten (el dato queda en la tabla y el tooltip). */
+function etiquetasSinChoque(items: { texto: string; x: number; y: number }[]) {
+  const puestas: { texto: string; x: number; y: number; dy: number; caja: [number, number, number, number] }[] = [];
+  const ancho = (t: string) => t.length * 6.6;
+  for (const it of [...items].sort((a, b) => b.x - a.x)) {
+    for (const dy of [0, -16, 16, -32, 32]) {
+      const caja: [number, number, number, number] = [it.x + 8, it.y + dy - 8, it.x + 10 + ancho(it.texto), it.y + dy + 6];
+      const choca = puestas.some((p) => caja[0] < p.caja[2] && caja[2] > p.caja[0] && caja[1] < p.caja[3] && caja[3] > p.caja[1]);
+      if (!choca) {
+        puestas.push({ ...it, dy, caja });
+        break;
+      }
+    }
+  }
+  return puestas;
+}
