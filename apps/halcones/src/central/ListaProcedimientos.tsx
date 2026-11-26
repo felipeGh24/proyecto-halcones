@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { ESTADOS, duracion, esActivo, fechaHora, infoDeClave, normalizar, obtenerClave, tiemposDe, useDatos, type Semaforo as TipoSemaforo } from "@plataforma/datos";
-import { Insignia, Segmentos, Semaforo, Vacio } from "@plataforma/ui";
+import { ESTADOS, duracion, esActivo, unidadesActivas, fechaHora, infoDeClave, normalizar, obtenerClave, tiemposDe, useDatos, type Semaforo as TipoSemaforo } from "@plataforma/datos";
+import { Insignia, Modal, Segmentos, Semaforo, Vacio } from "@plataforma/ui";
+import { Detalle } from "./Detalle";
 import { MarcoCentral } from "./MarcoCentral";
 
 type Vista = "activos" | "hoy" | "todos";
@@ -11,6 +12,8 @@ export function ListaProcedimientos() {
   const [semaforo, setSemaforo] = useState<TipoSemaforo | "todos">("todos");
   const [texto, setTexto] = useState("");
   const [limite, setLimite] = useState(100);
+  const [abierto, setAbierto] = useState<string | null>(null);
+  const sel = procedimientos.find((p) => p.id === abierto);
 
   const lista = useMemo(() => {
     const desdeHoy = Date.now() - 24 * 3600 * 1000;
@@ -75,7 +78,14 @@ export function ListaProcedimientos() {
                 {lista.slice(0, limite).map((p) => {
                   const t = tiemposDe(p);
                   return (
-                    <tr key={p.id}>
+                    <tr
+                      key={p.id}
+                      className={`fila-clic ${p.id === abierto ? "seleccionada" : ""}`}
+                      tabIndex={0}
+                      onClick={() => setAbierto(p.id)}
+                      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), setAbierto(p.id))}
+                      aria-label={`Abrir ${p.folio}`}
+                    >
                       <td className="num">{p.folio}</td>
                       <td className="num">{fechaHora(p.creadoEn)}</td>
                       <td>
@@ -91,7 +101,13 @@ export function ListaProcedimientos() {
                       <td>
                         <Insignia tono={p.estado === "recibido" ? "peligro" : esActivo(p.estado) ? "info" : "neutro"}>{ESTADOS[p.estado].etiqueta}</Insignia>
                       </td>
-                      <td>{moviles.find((m) => m.id === p.movilId)?.nombre ?? "—"}</td>
+                      <td>
+                        {(() => {
+                          const us = unidadesActivas(p);
+                          const principal = moviles.find((m) => m.id === p.movilId)?.nombre ?? us[0]?.nombre;
+                          return principal ? `${principal}${us.length > 1 ? ` +${us.length - 1}` : ""}` : "—";
+                        })()}
+                      </td>
                       <td className="derecha num">
                         {duracion(t.respuesta)}
                         {t.dentroDeMeta === false && <span className="texto-3"> · fuera de meta</span>}
@@ -101,6 +117,11 @@ export function ListaProcedimientos() {
                 })}
               </tbody>
             </table>
+          )}
+          {sel && (
+            <Modal ancho titulo={`${sel.folio} · ${sel.claveNumero} ${obtenerClave(sel.claveNumero)?.nombre ?? ""}`} onCerrar={() => setAbierto(null)}>
+              <Detalle procedimiento={sel} moviles={moviles} procedimientos={procedimientos} />
+            </Modal>
           )}
           {lista.length > limite && (
             <div style={{ padding: 16, textAlign: "center" }}>

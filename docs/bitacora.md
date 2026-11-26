@@ -154,3 +154,15 @@ Cada sesión agrega una entrada arriba: fecha, sistema, qué se hizo, qué qued�
 - **Datos de ejemplo:** 45 días de reportes y turnos cerrados ficticios.
 - **Base de datos:** `0002_reportes_y_adjuntos.sql` con reportes, complementos, evidencias, checklist, cambio de móvil, un turno abierto por persona y por móvil, RLS, bucket privado «evidencias» y vista para Power BI sin nombres.
 - 34 pruebas pasan; flujo completo verificado en Chrome (buscador simulado, porque el entorno de prueba no tiene internet).
+
+## 8 · 26-11-2026 (tarde) — Acceso total en la demo, turno de Central, varias unidades por procedimiento y pruebas de navegador
+
+- **Error corregido:** el patrullero (y otros roles) veía «Tu rol no tiene permiso». En la demo ahora toda cuenta entra a todo; los permisos por rol quedan para producción (`configurarAccesoTotal`). La Central tiene enlace a la app del patrullero y viceversa.
+- **Turnos A-1 (07–14), B-2 (14–22) y C-3 (22–07).**
+- **Turno de la Central:** para operar hay que abrir turno con nombre, n.º de halcón y turno; se ve lo que entrega el turno anterior (novedades, procedimientos activos que siguen, móviles en turno). «Cerrar turno» muestra el resumen (creados, despachos, finalizados, cancelados, modificados, activos que siguen, reportes, quiénes estuvieron y cada acción con hora y autor), pide novedades para el siguiente turno, lo guarda y permite imprimirlo. Historial en «Turnos de la Central».
+- **Registro de acciones:** crear, despachar, cambiar estado, corregir (con antes/después y motivo), cancelar, turnos, reportes y datos de la demo.
+- **Corregir datos** de un procedimiento (clave, dirección, punto, descripción) con motivo obligatorio. En «Procedimientos» cada fila abre el detalle.
+- **Varias unidades por procedimiento:** al crear o después se eligen móviles y personal en punto fijo o a pie («Solo la más cercana», «Todos los móviles libres», «Todas las unidades libres»). La primera va a cargo; las demás de apoyo. Se pueden agregar, liberar o dejar a cargo a otra. Las ocupadas se muestran con su procedimiento.
+- **Avisos al patrullero:** pantalla roja con sonido y vibración («Te despacharon · vas a cargo» o «Te enviaron de apoyo») hasta tocar «Entendido»; con permiso, notificación del sistema si la app está en segundo plano. La Central ve si cada unidad confirmó. Los apoyos informan «En camino», «En el lugar» y «Terminé mi apoyo».
+- **Pruebas:** 45 pruebas de datos y 9 pruebas de navegador en `pruebas/e2e` (pytest + Playwright). Errores y su prueba en `docs/errores-y-lecciones.md`.
+- **Base de datos:** migraciones 0003 (turnos de Central, auditoría por turno) y 0004 (unidades por procedimiento, un solo a cargo, una unidad en un solo procedimiento, Realtime para avisos).

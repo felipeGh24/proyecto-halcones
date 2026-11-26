@@ -14,7 +14,8 @@
     "build": "npm run build --workspaces --if-present",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "demo": "node scripts/servir-demo.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "pytest pruebas/e2e -q"
   },
   "devDependencies": {
     "@types/react": "^19.2.0",

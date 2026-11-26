@@ -4,6 +4,8 @@ import { useDatos, type Movil, type Punto, type TurnoPersonal, type Usuario } fr
 export interface TurnoActual {
   movil?: Movil;
   puesto?: TurnoPersonal;
+  /** Id con que la Central despacha a esta unidad (móvil o puesto). */
+  unidadId: string;
   unidad: string;
   patrullero: string;
   halcon: string;
@@ -16,12 +18,13 @@ export function useTurnoActual(usuario: Usuario): TurnoActual | null {
   const movil = moviles.find((m) => m.turno?.usuarioId === usuario.id);
   if (movil?.turno) {
     const t = movil.turno;
-    return { movil, unidad: movil.nombre, patrullero: t.patrullero, halcon: t.halcon ?? "", acompanante: t.acompanante, iniciadoEn: t.iniciadoEn };
+    return { movil, unidadId: movil.id, unidad: movil.nombre, patrullero: t.patrullero, halcon: t.halcon ?? "", acompanante: t.acompanante, iniciadoEn: t.iniciadoEn };
   }
   const puesto = personal.find((p) => p.usuarioId === usuario.id);
   if (puesto) {
     return {
       puesto,
+      unidadId: puesto.id,
       unidad: puesto.modalidad === "punto_fijo" ? `Punto fijo · ${puesto.lugar}` : `A pie · ${puesto.lugar}`,
       patrullero: puesto.patrullero,
       halcon: puesto.halcon ?? "",
@@ -42,4 +45,9 @@ export function posicionActual(): Promise<Punto | undefined> {
       { enableHighAccuracy: true, timeout: 4000, maximumAge: 15000 },
     );
   });
+}
+
+/** ¿Esta unidad fue enviada a este procedimiento (a cargo o de apoyo)? */
+export function participo(p: { movilId: string | null; unidades?: { id: string }[] }, unidadId: string) {
+  return p.movilId === unidadId || !!p.unidades?.some((u) => u.id === unidadId);
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { fechaHora, hora, normalizar, obtenerClave, obtenerCliente, TIPOS_REPORTE, useDatos, type Reporte, type TipoReporte } from "@plataforma/datos";
-import { Insignia, Segmentos, Vacio, VistaAdjuntos } from "@plataforma/ui";
+import { Insignia, Segmentos, useUsuario, Vacio, VistaAdjuntos } from "@plataforma/ui";
 import { MarcoCentral } from "./MarcoCentral";
 
 type Filtro = "todos" | "sin_leer";
@@ -8,6 +8,7 @@ type Filtro = "todos" | "sin_leer";
 /** Bandeja de reportes que envían los patrulleros, con sus fotos, videos y lo añadido después. */
 export function Reportes() {
   const { reportes, procedimientos } = useDatos();
+  const usuario = useUsuario();
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [abierto, setAbierto] = useState<string | null>(null);
   const [tipo, setTipo] = useState<TipoReporte | "">("");
@@ -28,7 +29,7 @@ export function Reportes() {
 
   function abrir(r: Reporte) {
     setAbierto(r.id);
-    if (!r.leidoPorCentral) obtenerCliente().marcarReporteLeido(r.id);
+    if (!r.leidoPorCentral) obtenerCliente().marcarReporteLeido(r.id, usuario);
   }
 
   return (

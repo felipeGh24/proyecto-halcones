@@ -13,3 +13,4 @@ export * from "./adjuntos";
 export { datosVacios } from "./demo/semilla";
 export * from "./geocodificar";
 export * from "./terreno";
+export * from "./turno-central";

@@ -1,6 +1,6 @@
 import { CLAVES, obtenerClave } from "../claves";
 import { centroideUV, UNIDADES_VECINALES, unidadVecinalDe } from "../geo";
-import type { EstadoProcedimiento, EventoProcedimiento, Movil, Procedimiento, Punto, RegistroTurno, Reporte, TipoMovil, TurnoPersonal } from "../tipos";
+import type { EstadoProcedimiento, EventoProcedimiento, Movil, Procedimiento, Punto, RegistroAccion, RegistroTurno, Reporte, TipoMovil, TurnoCentral, TurnoPersonal } from "../tipos";
 
 /**
  * Datos de ejemplo para el modo demostración. Todo es ficticio: no hay personas ni hechos reales.
@@ -110,6 +110,8 @@ export interface DatosDemo {
   personal: TurnoPersonal[];
   historialTurnos: RegistroTurno[];
   reportes: Reporte[];
+  auditoria: RegistroAccion[];
+  turnosCentral: TurnoCentral[];
   secuencia: number;
   secuenciaReportes: number;
 }
@@ -128,7 +130,7 @@ export function datosVacios(semilla = 7): DatosDemo {
     procedimientoId: null,
     turno: null,
   }));
-  return { procedimientos: [], moviles, personal: [], historialTurnos: [], reportes: [], secuencia: 0, secuenciaReportes: 0 };
+  return { procedimientos: [], moviles, personal: [], historialTurnos: [], reportes: [], auditoria: [], turnosCentral: [], secuencia: 0, secuenciaReportes: 0 };
 }
 
 export function generarDemo(ahora = Date.now(), dias = 90, semilla = 2026): DatosDemo {
@@ -243,7 +245,7 @@ export function generarDemo(ahora = Date.now(), dias = 90, semilla = 2026): Dato
     { id: "pers-3", usuarioId: "u-demo-p3", patrullero: "Patrullero 43", acompanante: "Patrullero 44", modalidad: "a_pie", lugar: "Patrullaje a pie · UV 30", ubicacion: puntoEnUV(azar, 30), iniciadoEn: inicioTurno },
   ];
   const { reportes, historialTurnos } = generarTerreno(azar, procedimientos, ahora, Math.min(dias, 45));
-  return { procedimientos, moviles, personal, historialTurnos, reportes, secuencia, secuenciaReportes: reportes.length };
+  return { procedimientos, moviles, personal, historialTurnos, reportes, auditoria: [], turnosCentral: [], secuencia, secuenciaReportes: reportes.length };
 
   function historico(azar: Azar, n: number, t0: number, foco?: { uv: number; claves: number[]; radio: number }): Procedimiento {
     const clave = foco ? obtenerClave(foco.claves[Math.floor(azar() * foco.claves.length)])! : elegirPonderado(azar, CLAVES_DEMO, PESOS_DEMO);

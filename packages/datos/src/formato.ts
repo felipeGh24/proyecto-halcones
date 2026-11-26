@@ -40,10 +40,11 @@ export function turnoDe(iso: string): Turno {
   return "noche";
 }
 
+/** Turnos de la Central: A-1 (07–14), B-2 (14–22) y C-3 (22–07). Las claves internas no cambian. */
 export const TURNOS: Record<Turno, { etiqueta: string; horario: string }> = {
-  manana: { etiqueta: "Mañana", horario: "07:00 – 14:00" },
-  tarde: { etiqueta: "Tarde", horario: "14:00 – 22:00" },
-  noche: { etiqueta: "Noche", horario: "22:00 – 07:00" },
+  manana: { etiqueta: "A-1", horario: "07:00 – 14:00" },
+  tarde: { etiqueta: "B-2", horario: "14:00 – 22:00" },
+  noche: { etiqueta: "C-3", horario: "22:00 – 07:00" },
 };
 
 /** Minutos entre dos instantes ISO. */

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { cerrarSesion, registrarActividad, sesionActual, tieneAcceso, type Rol, type Sesion, type Sistema } from "@plataforma/datos";
+import { cerrarSesion, permiteRoles, registrarActividad, sesionActual, tieneAcceso, type Rol, type Sesion, type Sistema } from "@plataforma/datos";
 
 interface ContextoSesion {
   sesion: Sesion | null;
@@ -56,7 +56,7 @@ export function RutaProtegida({ roles, children }: { roles?: Rol[]; children: Re
   const { sesion, sistema } = useSesion();
   const ubicacion = useLocation();
   if (!sesion) return <Navigate to="/ingreso" replace state={{ desde: ubicacion.pathname }} />;
-  if (!tieneAcceso(sesion.usuario.rol, sistema) || (roles && !roles.includes(sesion.usuario.rol))) {
+  if (!tieneAcceso(sesion.usuario.rol, sistema) || !permiteRoles(sesion.usuario.rol, roles)) {
     return <Navigate to="/sin-acceso" replace />;
   }
   return <>{children}</>;

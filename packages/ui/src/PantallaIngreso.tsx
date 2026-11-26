@@ -107,7 +107,7 @@ export function PantallaIngreso({ puntos, destino }: { puntos: string[]; destino
           <div>
             <strong style={{ fontSize: 13 }}>Modo demostración</strong>
             <p className="pequeno texto-2">
-              No es un acceso real: los datos son ficticios y se guardan solo en este navegador. Elige una cuenta de ejemplo (contraseña <code>{CONTRASENA_DEMO}</code>).
+              No es un acceso real: los datos son ficticios y se guardan solo en este navegador. Cualquier cuenta entra a los tres sistemas y a todas las pantallas; el rol solo define dónde llegas primero. Contraseña <code>{CONTRASENA_DEMO}</code>.
             </p>
           </div>
           <div className="ui-demo__cuentas">
@@ -144,14 +144,16 @@ export function PantallaIngreso({ puntos, destino }: { puntos: string[]; destino
 
 export function PantallaSinAcceso() {
   const { salir, sistema } = useSesion();
+  const navegar = useNavigate();
   return (
     <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 24 }}>
       <div className="ui-tarjeta" style={{ padding: 32, maxWidth: 440, textAlign: "center", display: "grid", gap: 12 }}>
         <h1 style={{ fontSize: 20 }}>Sin acceso</h1>
         <p className="texto-2">Tu rol no tiene permiso para esta sección de {SISTEMAS[sistema].nombre}. Si crees que es un error, pide acceso al administrador.</p>
-        <Boton variante="primario" onClick={salir}>
-          Ingresar con otra cuenta
+        <Boton variante="primario" onClick={() => navegar("/", { replace: true })}>
+          Ir a mi inicio
         </Boton>
+        <Boton onClick={salir}>Ingresar con otra cuenta</Boton>
       </div>
     </main>
   );

@@ -1,5 +1,7 @@
+import { Link } from "react-router-dom";
 import { useState } from "react";
-import { ESTADOS, SIGUIENTE, esActivo, hace, infoDeClave, obtenerClave, obtenerCliente, useDatos, type EstadoProcedimiento } from "@plataforma/datos";
+import { ESTADOS, SIGUIENTE, hace, infoDeClave, obtenerClave, obtenerCliente, procedimientoDeUnidad, unidadesActivas, useDatos, type EstadoProcedimiento, type EstadoUnidad, accesoTotalActivo } from "@plataforma/datos";
+import { AvisoDespacho } from "./AvisoDespacho";
 import { avisar, Boton, Icono, Insignia, Modal, Semaforo, useUsuario, type NombreIcono } from "@plataforma/ui";
 import { CierreTurno } from "./CierreTurno";
 import { InicioTurno } from "./InicioTurno";
@@ -36,8 +38,25 @@ export function Patrulla() {
 
   if (!turno) return <InicioTurno />;
 
-  const asignado = turno.movil ? procedimientos.find((p) => p.movilId === turno.movil!.id && esActivo(p.estado) && p.estado !== "recibido") : undefined;
-  const sig = asignado ? SIGUIENTE[asignado.estado] : undefined;
+  // A cargo o de apoyo: la Central puede enviar a varias unidades (móviles, puntos fijos o a pie) al mismo procedimiento.
+  const envio = procedimientoDeUnidad(procedimientos, turno.unidadId);
+  const asignado = envio?.procedimiento;
+  const deApoyo = !!envio && !envio.unidad.aCargo;
+  const sig = asignado && !deApoyo ? SIGUIENTE[asignado.estado] : undefined;
+  const sigApoyo: { estado: EstadoUnidad; texto: string } | null = !deApoyo
+    ? null
+    : envio!.unidad.estado === "asignado"
+      ? { estado: "en_camino", texto: "Voy en camino" }
+      : envio!.unidad.estado === "en_camino"
+        ? { estado: "en_el_lugar", texto: "Llegué al lugar" }
+        : { estado: "liberado", texto: "Terminé mi apoyo" };
+  const otras = asignado ? unidadesActivas(asignado).filter((u) => u.id !== turno.unidadId) : [];
+
+  function avanzarApoyo(estado: EstadoUnidad) {
+    if (!asignado) return;
+    obtenerCliente().actualizarUnidad(asignado.id, turno!.unidadId, estado, usuario);
+    avisar(estado === "liberado" ? "Apoyo terminado: quedas disponible" : estado === "en_camino" ? "En camino" : "En el lugar");
+  }
 
   async function avanzar(estado: EstadoProcedimiento, resultado?: string) {
     if (!asignado) return;
@@ -61,7 +80,14 @@ export function Patrulla() {
             {turno.acompanante ? ` y ${turno.acompanante}` : ""} · desde {new Date(turno.iniciadoEn).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" })}
           </div>
         </div>
-        <Insignia tono="demo">Demo</Insignia>
+        <span className="patrulla__cabeza-acciones">
+          {accesoTotalActivo() && (
+            <Link to="/central" className="enlace pequeno">
+              Ir a la Central
+            </Link>
+          )}
+          <Insignia tono="demo">Demo</Insignia>
+        </span>
       </header>
 
       <main className="patrulla__cuerpo">
@@ -74,6 +100,7 @@ export function Patrulla() {
                   <Insignia tono="info" punto>
                     {ESTADOS[asignado.estado].etiqueta}
                   </Insignia>
+                  <Insignia tono={deApoyo ? "alerta" : "ok"}>{deApoyo ? "De apoyo" : "A cargo"}</Insignia>
                 </div>
                 <h1>
                   {asignado.claveNumero} · {obtenerClave(asignado.claveNumero)?.nombre}
@@ -85,12 +112,22 @@ export function Patrulla() {
                 <p className="pequeno texto-3">
                   {asignado.folio} · recibido {hace(asignado.creadoEn)}
                 </p>
+                {otras.length > 0 && (
+                  <p className="pequeno patrulla__otras">
+                    <Icono nombre="personas" tamano={16} /> También van: {otras.map((o) => `${o.nombre} (${o.patrullero})${o.aCargo ? " · a cargo" : ""}`).join(", ")}
+                  </p>
+                )}
                 <a className="ui-boton ui-boton--secundario ui-boton--grande ui-boton--bloque" href={`https://www.google.com/maps/dir/?api=1&destination=${asignado.ubicacion.lat},${asignado.ubicacion.lng}`} target="_blank" rel="noreferrer noopener">
                   <Icono nombre="navegar" tamano={22} /> Cómo llegar
                 </a>
                 {sig && (
                   <Boton variante="primario" grande bloque disabled={enviando} onClick={() => (sig === "finalizado" ? setFinalizando(true) : avanzar(sig))}>
                     {enviando ? "Enviando…" : TEXTO_BOTON[sig]}
+                  </Boton>
+                )}
+                {sigApoyo && (
+                  <Boton variante="primario" grande bloque onClick={() => avanzarApoyo(sigApoyo.estado)}>
+                    {sigApoyo.texto}
                   </Boton>
                 )}
               </section>
@@ -127,6 +164,7 @@ export function Patrulla() {
         ))}
       </nav>
 
+      {envio && !envio.unidad.recibidoEn && <AvisoDespacho procedimiento={envio.procedimiento} unidad={envio.unidad} />}
       {reportar && <NuevoReporte turno={turno} procedimientoInicial={asignado} onCerrar={() => setReportar(false)} />}
       {finalizando && asignado && (
         <Finalizar

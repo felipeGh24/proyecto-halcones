@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { obtenerCliente, useDatos } from "@plataforma/datos";
-import { avisar, Boton, Modal, Tarjeta } from "@plataforma/ui";
+import { avisar, Boton, Modal, Tarjeta, useUsuario } from "@plataforma/ui";
 import { MarcoCentral } from "./MarcoCentral";
 
 type Accion = "vacio" | "ejemplo" | null;
@@ -9,9 +9,10 @@ type Accion = "vacio" | "ejemplo" | null;
 export function Ajustes() {
   const { procedimientos, reportes, moviles } = useDatos();
   const [confirmar, setConfirmar] = useState<Accion>(null);
+  const usuario = useUsuario();
 
   return (
-    <MarcoCentral titulo="Ajustes de la demo" subtitulo="Solo administrador y supervisor">
+    <MarcoCentral titulo="Ajustes de la demo" subtitulo="Datos de la demostración">
       <div className="pagina" style={{ maxWidth: 900 }}>
         <Tarjeta titulo="Datos actuales">
           <p className="texto-2">
@@ -38,7 +39,7 @@ export function Ajustes() {
               <Boton
                 variante={confirmar === "vacio" ? "peligro" : "primario"}
                 onClick={() => {
-                  obtenerCliente().reiniciar(confirmar);
+                  obtenerCliente().reiniciar(confirmar, usuario);
                   avisar(confirmar === "vacio" ? "Datos vaciados: la operación parte de cero" : "Datos de ejemplo cargados");
                   setConfirmar(null);
                 }}

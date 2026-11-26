@@ -71,7 +71,7 @@ export function CierreTurno({ movil, personal, bloqueado, modo = "salir", onCerr
         {movil && (
           <>
             <div className="dos-columnas">
-              <Campo etiqueta="Kilometraje final" htmlFor="kmf" error={km && !kmValido ? `Debe ser mayor o igual a ${kmInicial}` : undefined} ayuda={kmInicial != null ? `Inicial: ${kmInicial.toLocaleString("es-CL")}` : undefined}>
+              <Campo etiqueta="Kilometraje final" htmlFor="kmf" error={km && !kmValido ? `No puede ser menor que el inicial (${kmInicial?.toLocaleString("es-CL")} km)` : undefined} ayuda={kmInicial != null ? `Inicial: ${kmInicial.toLocaleString("es-CL")}` : undefined}>
                 <input id="kmf" className="ui-entrada" inputMode="numeric" value={km} onChange={(e) => setKm(e.target.value.replace(/\D/g, ""))} />
               </Campo>
               <Campo etiqueta="Combustible" htmlFor="combf">

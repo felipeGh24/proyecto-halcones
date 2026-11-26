@@ -148,3 +148,55 @@ describe("planilla de puntos de interés", () => {
     expect(errores.length).toBe(1);
   });
 });
+
+import { ACCESO, configurarAccesoTotal, permiteRoles, puede, tieneAcceso, USUARIOS_DEMO as CUENTAS, iniciarSesion } from "../src/auth";
+import type { Sistema } from "../src/tipos";
+
+describe("acceso", () => {
+  const sistemas = Object.keys(ACCESO) as Sistema[];
+  afterEach(() => configurarAccesoTotal(true));
+
+  it("en la demo todas las cuentas entran a todos los sistemas, pantallas y acciones", () => {
+    configurarAccesoTotal(true);
+    for (const u of CUENTAS) {
+      for (const s of sistemas) expect(tieneAcceso(u.rol, s)).toBe(true);
+      expect(permiteRoles(u.rol, ["administrador"])).toBe(true);
+      expect(puede(u.rol, "despachar")).toBe(true);
+    }
+  });
+
+  it("el patrullero puede iniciar sesión en los tres sistemas de la demo", async () => {
+    const mem = new Map<string, string>();
+    (globalThis as { localStorage?: unknown }).localStorage ??= { getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => mem.set(k, v), removeItem: (k: string) => mem.delete(k) };
+    for (const s of sistemas) {
+      const r = await iniciarSesion("patrullero@demo.cl", "demo2026", s);
+      expect(r.ok).toBe(true);
+    }
+  });
+
+  it("en producción manda el rol", () => {
+    configurarAccesoTotal(false);
+    expect(tieneAcceso("patrullero", "analisis")).toBe(false);
+    expect(tieneAcceso("analista", "analisis")).toBe(true);
+    expect(puede("patrullero", "despachar")).toBe(false);
+    expect(permiteRoles("patrullero", ["operador"])).toBe(false);
+    expect(permiteRoles("patrullero", undefined)).toBe(true);
+  });
+});
+
+import { TURNOS, turnoDe } from "../src/formato";
+
+describe("turnos A-1, B-2 y C-3", () => {
+  it("tienen los nombres y horarios de la Central", () => {
+    expect([TURNOS.manana.etiqueta, TURNOS.tarde.etiqueta, TURNOS.noche.etiqueta]).toEqual(["A-1", "B-2", "C-3"]);
+    expect(TURNOS.manana.horario).toBe("07:00 – 14:00");
+  });
+  it("cambian a las 07:00, 14:00 y 22:00 de Chile", () => {
+    // Noviembre: Chile está en UTC−3.
+    expect(turnoDe("2026-11-26T10:00:00Z")).toBe("manana"); // 07:00
+    expect(turnoDe("2026-11-26T16:59:00Z")).toBe("manana"); // 13:59
+    expect(turnoDe("2026-11-26T17:00:00Z")).toBe("tarde"); // 14:00
+    expect(turnoDe("2026-11-27T01:00:00Z")).toBe("noche"); // 22:00
+    expect(turnoDe("2026-11-26T09:59:00Z")).toBe("noche"); // 06:59
+  });
+});

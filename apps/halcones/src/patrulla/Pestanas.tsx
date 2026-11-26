@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { ESTADOS, fechaHora, hora, obtenerClave, TIPOS_REPORTE, useDatos, type Reporte } from "@plataforma/datos";
 import { Boton, Insignia, Vacio, VistaAdjuntos, useUsuario } from "@plataforma/ui";
 import { ComplementarReporte } from "./NuevoReporte";
-import type { TurnoActual } from "./turnoActual";
+import { participo, type TurnoActual } from "./turnoActual";
 
 /** Mis reportes: enviar uno nuevo o añadir información a uno ya enviado. */
 export function PestanaReportes({ turno, onNuevo }: { turno: TurnoActual; onNuevo: () => void }) {
@@ -89,7 +89,7 @@ export function PestanaBitacora({ turno }: { turno: TurnoActual }) {
   const enLosQueEstuve = useMemo(
     () =>
       procedimientos
-        .filter((p) => p.eventos.some((e) => e.porUsuarioId === usuario.id) || (turno.movil && p.movilId === turno.movil.id && p.creadoEn >= turno.iniciadoEn))
+        .filter((p) => p.eventos.some((e) => e.porUsuarioId === usuario.id) || (participo(p, turno.unidadId) && p.creadoEn >= turno.iniciadoEn))
         .sort((a, b) => b.creadoEn.localeCompare(a.creadoEn)),
     [procedimientos, usuario.id, turno],
   );

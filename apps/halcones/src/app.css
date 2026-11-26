@@ -45,7 +45,9 @@
 .detalle__bloque { padding: 14px 18px; border-bottom: 1px solid var(--borde); display: grid; gap: 10px; }
 .detalle__bloque h3 { font-size: 13px; color: var(--texto-2); text-transform: uppercase; letter-spacing: 0.05em; }
 .detalle__acciones { display: flex; gap: 8px; flex-wrap: wrap; }
-.detalle__pie { padding: 14px 18px; }
+.detalle__pie { padding: 14px 18px; display: flex; gap: 8px; flex-wrap: wrap; }
+.detalle__cambios { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.detalle__cambios li { border-left: 3px solid var(--ambar); padding-left: 10px; }
 .detalle-vacio { padding: 24px 20px; display: grid; gap: 8px; }
 kbd { font-family: var(--fuente); font-size: 11px; border: 1px solid var(--borde-fuerte); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--fondo); }
 
@@ -200,3 +202,70 @@ kbd { font-family: var(--fuente); font-size: 11px; border: 1px solid var(--borde
 .checklist__obs { display: grid; gap: 8px; padding: 8px 0 8px 12px; border-left: 3px solid var(--ambar); }
 .patrulla .ui-modal { width: 100%; }
 @media (max-width: 600px) { .patrulla .ui-velo { padding: 0; align-items: end; } .patrulla .ui-modal { border-radius: 14px 14px 0 0; max-height: 94vh; } }
+.patrulla__cabeza-acciones { display: flex; align-items: center; gap: 12px; }
+
+/* ---------- Turno de la Central ---------- */
+.turno-central { min-height: 100vh; background: var(--superficie); padding: 24px; display: grid; gap: 20px; align-content: start; max-width: 1400px; margin: 0 auto; }
+.turno-central__cabeza { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.turno-central__cabeza h1 { font-size: 24px; margin-top: 4px; }
+.turno-central__acciones { display: flex; align-items: center; gap: 8px; }
+.turno-central__grilla { display: grid; grid-template-columns: minmax(320px, 420px) 1fr; gap: 20px; align-items: start; }
+.turno-central__form, .turno-central__recibe, .turno-central__cerrado { padding: 20px; display: grid; gap: 14px; }
+.turno-central__form h2, .turno-central__recibe h2, .turno-central__cerrado h2 { font-size: 18px; }
+.turno-central__form .ui-segmentos { display: grid; grid-template-columns: 1fr; }
+.turno-central__form .ui-segmentos button { justify-content: flex-start; min-height: 40px; }
+.turno-central__sub { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--texto-2); margin: 8px 0 6px; }
+.turno-central__nota { background: #FFF7ED; border-left: 3px solid var(--ambar); padding: 8px 12px; border-radius: 6px; margin: 0; }
+.turno-central__anterior { display: grid; gap: 6px; }
+.turno-central__pendientes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.turno-central__pendientes li { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--borde); border-radius: 8px; background: var(--fondo); }
+.turno-central__chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.turno-central__chips li { font-size: 12px; background: var(--superficie); border: 1px solid var(--borde); border-radius: 999px; padding: 3px 10px; }
+.turno-central__cerrado-cabeza { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.turno-central__barra { display: flex; align-items: center; gap: 10px; padding-left: 12px; border-left: 1px solid var(--borde); }
+.resumen-turno { display: grid; gap: 16px; }
+.resumen-turno__kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border: 1px solid var(--borde); border-radius: 10px; }
+.resumen-turno__kpis > * { border-bottom: 1px solid var(--borde); }
+.resumen-turno__kpis > *:not(:nth-child(4n + 1)) { border-left: 1px solid var(--borde); }
+.resumen-turno__kpis > :nth-last-child(-n + 4) { border-bottom: 0; }
+.resumen-turno__dos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.resumen-turno__personas { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.resumen-turno__personas li { display: flex; gap: 8px; align-items: flex-start; }
+.resumen-turno__cabeza-acciones { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.resumen-turno__tabla td:last-child { white-space: normal; }
+.resumen-turno__fila--cambio { background: #FFFBEB; }
+@media (max-width: 1000px) { .turno-central__grilla, .resumen-turno__dos { grid-template-columns: 1fr; } .resumen-turno__kpis { grid-template-columns: repeat(2, 1fr); } }
+@media print { .turno-central { padding: 0; background: #fff; } .ui-velo { position: static; background: none; } }
+
+/* ---------- Aviso de despacho en la app del patrullero ---------- */
+.aviso-despacho { position: fixed; inset: 0; z-index: 300; background: rgba(180, 35, 24, 0.94); display: grid; place-items: center; padding: 16px; animation: aviso-pulso 1.2s ease-in-out 3; }
+.aviso-despacho__caja { background: var(--fondo); border-radius: 16px; padding: 22px; width: min(440px, 100%); display: grid; gap: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35); }
+.aviso-despacho__tipo { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--rojo); text-transform: uppercase; font-size: 13px; letter-spacing: 0.04em; }
+.aviso-despacho h1 { font-size: 26px; }
+.aviso-despacho__dir { display: flex; gap: 6px; align-items: center; font-size: 18px; font-weight: 600; }
+@keyframes aviso-pulso { 50% { background: rgba(180, 35, 24, 0.75); } }
+@media (prefers-reduced-motion: reduce) { .aviso-despacho { animation: none; } }
+.patrulla__otras { display: flex; gap: 6px; align-items: flex-start; background: var(--superficie); padding: 8px 10px; border-radius: 8px; }
+.fila-clic { cursor: pointer; }
+.fila-clic:focus-visible { outline: 2px solid var(--primario); outline-offset: -2px; }
+
+/* ---------- Unidades que van (varias por procedimiento) ---------- */
+.asignacion__elegidas { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.asignacion__elegidas li { display: flex; align-items: center; gap: 6px; background: var(--fondo); border: 1px solid var(--borde); border-radius: 8px; padding: 6px 10px; }
+.asignacion__rol { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--primario); background: var(--primario-suave); border-radius: 999px; padding: 2px 8px; }
+.asignacion__rol--cargo { color: #fff; background: var(--secundario); }
+.asignacion__pie { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.unidades { display: grid; gap: 10px; }
+.unidades__atajos { display: flex; flex-wrap: wrap; gap: 6px; }
+.unidades__atajos .ui-boton { min-height: 34px; font-size: 13px; padding: 4px 10px; }
+.unidades__lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 340px; overflow: auto; }
+.unidades__lista li { border: 1px solid var(--borde); border-radius: 8px; background: var(--fondo); }
+.unidades__lista li.elegida { border-color: var(--primario); background: var(--primario-suave); }
+.unidades__lista li.ocupada { opacity: 0.7; }
+.unidades__fila { display: grid; grid-template-columns: 20px 1fr auto auto; gap: 10px; align-items: center; padding: 8px 10px; cursor: pointer; min-height: 44px; }
+.unidades__fila input { width: 18px; height: 18px; accent-color: var(--primario); }
+.unidades__nombre { display: grid; }
+.unidades__en { display: block; padding: 0 10px 8px 40px; }
+.detalle__unidades { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.detalle__unidades li { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center; border: 1px solid var(--borde); border-radius: 8px; padding: 8px 10px; }
+.detalle__unidades-acciones { display: flex; gap: 10px; }

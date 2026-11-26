@@ -55,11 +55,16 @@ npm run demo                  # http://localhost:4173/halcones/ (y /georreferenc
 
 ```bash
 npm test          # Vitest; también funciona con: bun test packages/datos/pruebas
+# En el navegador (con la demo corriendo en otra terminal: npm run build && npm run demo)
+pip install pytest playwright && playwright install chromium
+npm run test:e2e  # todas las cuentas × todas las pantallas, turno de Central, patrullero, varias unidades, análisis
 ```
+
+Errores ya encontrados y la prueba que vigila cada uno: [docs/errores-y-lecciones.md](docs/errores-y-lecciones.md).
 
 ### Modo demostración
 
-Mientras no se conecte la base de datos, todo funciona con **datos ficticios guardados en el navegador** y la pantalla de ingreso lo dice claramente. Cuentas de ejemplo (contraseña `demo2026`):
+Mientras no se conecte la base de datos, todo funciona con **datos ficticios guardados en el navegador** y la pantalla de ingreso lo dice claramente. **En la demo cualquier cuenta entra a los tres sistemas y a todas las pantallas** (el rol solo decide dónde se llega primero); los permisos por rol se activan al conectar la base real. Cuentas de ejemplo (contraseña `demo2026`):
 
 | Cuenta | Rol |
 | --- | --- |

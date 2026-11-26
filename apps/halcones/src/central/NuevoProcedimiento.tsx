@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { buscarEsquina, centroideUV, direccionDe, partirEsquina, ubicarPunto, historialCercano, leerPuntosInteres, obtenerClave, movilesCercanos, obtenerCliente, puede, UNIDADES_VECINALES, unidadVecinalDe, useDatos, type Punto } from "@plataforma/datos";
+import { buscarEsquina, unidadesEnTurno, centroideUV, direccionDe, partirEsquina, ubicarPunto, historialCercano, leerPuntosInteres, obtenerClave, obtenerCliente, puede, UNIDADES_VECINALES, unidadVecinalDe, useDatos, type Punto } from "@plataforma/datos";
 import { Mapa } from "@plataforma/mapa";
 import { avisar, Boton, Campo, EntradaDireccion, Modal, useUsuario } from "@plataforma/ui";
 import { BuscadorClave } from "./BuscadorClave";
-import { ListaDespacho } from "./ListaDespacho";
+import { SelectorUnidades } from "./SelectorUnidades";
 
 /**
  * Crear un procedimiento en menos de 30 segundos:
@@ -12,8 +12,10 @@ import { ListaDespacho } from "./ListaDespacho";
  */
 export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => void; onCreado: (id: string) => void }) {
   const usuario = useUsuario();
-  const { moviles, procedimientos } = useDatos();
-  const [movilElegido, setMovilElegido] = useState<string | null>(null);
+  const { moviles, procedimientos, personal } = useDatos();
+  // Unidades que van: la primera queda a cargo, el resto de apoyo. Por defecto, el móvil libre más cercano.
+  const [seleccion, setSeleccion] = useState<string[]>([]);
+  const seleccionTocada = useRef(false);
   const [clave, setClave] = useState<number | null>(null);
   const [direccion, setDireccion] = useState("");
   const [descripcion, setDescripcion] = useState("");
@@ -47,10 +49,17 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
   }
   const uv = punto ? unidadVecinalDe(punto) : null;
   const historial = punto ? historialCercano(procedimientos, punto) : null;
-  const masCercano = punto ? movilesCercanos(moviles, punto, 1)[0] : undefined;
-  // Móvil a despachar: el que eligió el operador si sigue libre; si no, el libre más cercano.
-  const elegidoLibre = moviles.find((m) => m.id === movilElegido && m.estado === "disponible" && m.turno);
-  const destino = elegidoLibre ?? masCercano?.movil;
+  const disponibles = punto ? unidadesEnTurno(moviles, personal, punto).filter((u) => u.libre) : [];
+  const elegidas = seleccion.map((id) => disponibles.find((u) => u.id === id)).filter((u): u is NonNullable<typeof u> => !!u);
+  const destino = elegidas[0];
+
+  useEffect(() => {
+    if (!punto || seleccionTocada.current) return;
+    const libres = unidadesEnTurno(moviles, personal, punto).filter((u) => u.libre);
+    const cercana = libres.find((u) => u.tipo === "movil") ?? libres[0];
+    setSeleccion(cercana ? [cercana.id] : []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [punto]);
   const puedeDespachar = puede(usuario.rol, "despachar");
 
   function validar() {
@@ -67,8 +76,16 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
     if (!validar()) return;
     const cliente = obtenerCliente();
     const p = cliente.crearProcedimiento({ claveNumero: clave!, direccion, descripcion, ubicacion: punto! }, usuario);
-    if (despachar && destino) cliente.despachar(p.id, destino.id, usuario);
-    avisar(despachar && destino ? `${p.folio} creado y despachado a ${destino.nombre} (${destino.turno?.patrullero ?? ""})` : `${p.folio} creado; queda en la cola sin despachar`);
+    let texto = `${p.folio} creado; queda en la cola sin despachar`;
+    if (despachar && elegidas.length) {
+      try {
+        cliente.agregarUnidades(p.id, elegidas.map((u) => u.id), usuario);
+        texto = elegidas.length === 1 ? `${p.folio} despachado a ${destino!.nombre} (${destino!.patrullero})` : `${p.folio} despachado a ${elegidas.length} unidades: ${elegidas.map((u) => u.nombre).join(", ")}`;
+      } catch (e) {
+        texto = `${p.folio} creado. ${e instanceof Error ? e.message : ""}`;
+      }
+    }
+    avisar(texto);
     onCreado(p.id);
   }
 
@@ -85,8 +102,8 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
             {puedeDespachar ? "Crear sin despachar" : "Crear"}
           </Boton>
           {puedeDespachar && (
-            <Boton variante="primario" icono="enviar" onClick={() => crear(true)} disabled={!destino} title={destino ? "" : punto ? "No hay móviles libres con patrullero en turno" : "Elige la dirección sugerida o marca el punto en el mapa"}>
-              Crear y despachar{destino ? ` a ${destino.nombre}` : ""}
+            <Boton variante="primario" icono="enviar" onClick={() => crear(true)} disabled={!destino} title={destino ? "" : punto ? "Elige al menos una unidad libre" : "Elige la dirección sugerida o marca el punto en el mapa"}>
+              Crear y despachar{elegidas.length === 1 ? ` a ${destino!.nombre}` : elegidas.length > 1 ? ` (${elegidas.length} unidades)` : ""}
             </Boton>
           )}
         </>
@@ -124,25 +141,46 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
             <textarea id="descripcion" className="ui-entrada" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={500} />
           </Campo>
           {puedeDespachar && (
-            <section className="asignacion" aria-label="Asignación del móvil">
-              <span className="ui-campo__etiqueta">Móvil asignado automáticamente</span>
+            <section className="asignacion" aria-label="Unidades que van">
+              <span className="ui-campo__etiqueta">Unidades que van</span>
               {!punto ? (
-                <span className="ui-campo__ayuda">Elige una dirección sugerida o marca el punto en el mapa: el sistema asigna el móvil libre con patrullero en turno más cercano.</span>
-              ) : destino ? (
-                <div className="asignacion__elegido">
-                  <div>
-                    <strong>{destino.nombre}</strong>
-                    <span className="pequeno texto-2"> · {destino.turno?.patrullero}</span>
-                    <div className="pequeno texto-3">{elegidoLibre ? "Elegido por el operador" : "El libre más cercano al punto"}</div>
-                  </div>
-                  <button type="button" className="ui-boton ui-boton--fantasma" onClick={() => setVerLista((v) => !v)}>
-                    {verLista ? "Ocultar móviles" : "Cambiar móvil"}
-                  </button>
-                </div>
+                <span className="ui-campo__ayuda">Elige una dirección sugerida o marca el punto en el mapa: el sistema propone el móvil libre más cercano. Puedes sumar más unidades.</span>
               ) : (
-                <span className="ui-campo__error">No hay móviles libres con patrullero en turno. Se creará sin despachar.</span>
+                <>
+                  {elegidas.length ? (
+                    <ul className="asignacion__elegidas">
+                      {elegidas.map((u, i) => (
+                        <li key={u.id}>
+                          <strong>{u.nombre}</strong>
+                          <span className="pequeno texto-2"> · {u.patrullero}</span>
+                          <span className={`asignacion__rol ${i === 0 ? "asignacion__rol--cargo" : ""}`}>{i === 0 ? "A cargo" : "Apoyo"}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="ui-campo__error">{disponibles.length ? "Ninguna unidad elegida: se creará sin despachar." : "No hay unidades libres en turno. Se creará sin despachar."}</span>
+                  )}
+                  <div className="asignacion__pie">
+                    <span className="pequeno texto-3">{seleccionTocada.current ? "Elegidas por el operador" : "Propuesta: el móvil libre más cercano"}</span>
+                    <button type="button" className="ui-boton ui-boton--secundario" onClick={() => setVerLista((v) => !v)}>
+                      {verLista ? "Ocultar unidades" : "Elegir unidades"}
+                    </button>
+                  </div>
+                  {verLista && (
+                    <SelectorUnidades
+                      punto={punto}
+                      moviles={moviles}
+                      personal={personal}
+                      procedimientos={procedimientos}
+                      seleccion={elegidas.map((u) => u.id)}
+                      onCambio={(ids) => {
+                        seleccionTocada.current = true;
+                        setSeleccion(ids);
+                      }}
+                    />
+                  )}
+                </>
               )}
-              {punto && verLista && <ListaDespacho punto={punto} moviles={moviles} procedimientos={procedimientos} elegido={destino?.id ?? null} onElegir={(m) => setMovilElegido(m.id)} />}
             </section>
           )}
           <details className="ayudas">

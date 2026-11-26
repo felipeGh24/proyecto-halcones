@@ -13,7 +13,7 @@ import {
   type TipoReporte,
 } from "@plataforma/datos";
 import { avisar, Boton, Campo, EntradaDireccion, Modal, Segmentos, SelectorAdjuntos, useUsuario } from "@plataforma/ui";
-import { posicionActual, type TurnoActual } from "./turnoActual";
+import { participo, posicionActual, type TurnoActual } from "./turnoActual";
 
 /**
  * Reporte a la Central: hora y número de halcón automáticos; barrio y unidad vecinal se calculan desde la ubicación;
@@ -32,7 +32,7 @@ export function NuevoReporte({ turno, procedimientoInicial, onCerrar }: { turno:
   const ahora = useMemo(() => new Date(), []);
 
   // Procedimientos de este turno que se pueden adjuntar al reporte.
-  const mios = procedimientos.filter((p) => turno.movil && p.movilId === turno.movil.id && new Date(p.creadoEn) >= new Date(turno.iniciadoEn)).reverse();
+  const mios = procedimientos.filter((p) => participo(p, turno.unidadId) && new Date(p.creadoEn) >= new Date(turno.iniciadoEn)).reverse();
   const proc = procedimientos.find((p) => p.id === procId);
 
   useEffect(() => {

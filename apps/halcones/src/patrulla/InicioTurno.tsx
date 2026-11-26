@@ -1,5 +1,7 @@
+import { Link } from "react-router-dom";
+import { pedirPermisoNotificaciones } from "./AvisoDespacho";
 import { useState } from "react";
-import { centroideUV, leerPuntosInteres, obtenerCliente, UNIDADES_VECINALES, useDatos, type Modalidad } from "@plataforma/datos";
+import { centroideUV, leerPuntosInteres, obtenerCliente, UNIDADES_VECINALES, useDatos, type Modalidad, accesoTotalActivo } from "@plataforma/datos";
 import { avisar, Boton, Campo, Insignia, Segmentos, SelectorAdjuntos, useUsuario } from "@plataforma/ui";
 import type { Adjunto } from "@plataforma/datos";
 
@@ -33,6 +35,8 @@ export function InicioTurno() {
 
   function iniciar() {
     setError("");
+    // Para que los avisos de despacho lleguen aunque el celular tenga la app en segundo plano.
+    pedirPermisoNotificaciones();
     try {
       if (conMovil) {
         obtenerCliente().iniciarTurno(
@@ -82,7 +86,14 @@ export function InicioTurno() {
           <strong>Inicio de turno</strong>
           <div className="pequeno texto-3">Halcones · app del patrullero</div>
         </div>
-        <Insignia tono="demo">Demo</Insignia>
+        <span className="patrulla__cabeza-acciones">
+          {accesoTotalActivo() && (
+            <Link to="/central" className="enlace pequeno">
+              Ir a la Central
+            </Link>
+          )}
+          <Insignia tono="demo">Demo</Insignia>
+        </span>
       </header>
       <main className="patrulla__cuerpo" style={{ display: "grid", gap: 16 }}>
         {error && (

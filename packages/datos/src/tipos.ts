@@ -49,11 +49,31 @@ export interface Procedimiento {
   unidadVecinal: number | null;
   barrio: string | null;
   estado: EstadoProcedimiento;
+  /** Móvil a cargo (si la unidad a cargo es un móvil). Se mantiene por compatibilidad con métricas y mapa. */
   movilId: string | null;
+  /** Todas las unidades enviadas: la que está a cargo y los apoyos (móviles, puntos fijos o a pie). */
+  unidades?: UnidadAsignada[];
   resultado?: string;
   /** ISO 8601 de la recepción (primer evento). */
   creadoEn: string;
   eventos: EventoProcedimiento[];
+}
+
+export type EstadoUnidad = "asignado" | "en_camino" | "en_el_lugar" | "liberado";
+
+export interface UnidadAsignada {
+  /** Id del móvil (MOVIL-03) o del turno de punto fijo / a pie (pers-…). */
+  id: string;
+  tipo: "movil" | "personal";
+  nombre: string;
+  patrullero: string;
+  /** La unidad a cargo avanza los estados del procedimiento; las demás son apoyo. */
+  aCargo: boolean;
+  estado: EstadoUnidad;
+  asignadoEn: string;
+  /** Cuando el patrullero tocó «Entendido» en el aviso. */
+  recibidoEn?: string;
+  actualizadoEn: string;
 }
 
 export type TipoMovil = "Móvil" | "Alpha" | "RAM";
@@ -165,6 +185,8 @@ export interface TurnoPersonal {
   puntoId?: string;
   ubicacion: Punto;
   iniciadoEn: string;
+  /** Procedimiento al que fue enviado (a cargo o de apoyo). */
+  procedimientoId?: string | null;
 }
 
 /** Turno ya cerrado, para la bitácora y el análisis de dotación. */
@@ -190,4 +212,78 @@ export interface CierreTurno {
   combustibleFinal?: string | null;
   novedadesChecklist?: string[];
   observaciones?: string;
+}
+
+/* ---------- Registro de acciones (auditoría visible) y turnos de la Central ---------- */
+
+export type TipoAccion =
+  | "crear"
+  | "despachar"
+  | "estado"
+  | "editar"
+  | "cancelar"
+  | "apoyo"
+  | "turno_movil"
+  | "turno_personal"
+  | "reporte"
+  | "reporte_leido"
+  | "turno_central"
+  | "datos_demo";
+
+/** Cada acción queda con quién, cuándo y qué cambió. No se edita ni se borra. */
+export interface RegistroAccion {
+  id: string;
+  en: string;
+  usuarioId: string;
+  nombre: string;
+  rol: Rol;
+  accion: TipoAccion;
+  detalle: string;
+  procedimientoId?: string;
+  folio?: string;
+}
+
+export interface ProcedimientoPendiente {
+  id: string;
+  folio: string;
+  claveNumero: number;
+  estado: EstadoProcedimiento;
+  direccion: string;
+  movil: string | null;
+  creadoEn: string;
+}
+
+export interface ResumenTurnoCentral {
+  desde: string;
+  hasta: string;
+  personas: { nombre: string; halcon: string; rol: Rol; desde: string; hasta: string | null }[];
+  creados: number;
+  despachados: number;
+  finalizados: number;
+  cancelados: number;
+  editados: number;
+  rojosCreados: number;
+  despachoMedianaMin: number | null;
+  activosQueSiguen: ProcedimientoPendiente[];
+  reportesRecibidos: number;
+  reportesSinLeer: number;
+  movilesConTurno: string[];
+  personalEnTerreno: number;
+  acciones: RegistroAccion[];
+}
+
+export interface TurnoCentral {
+  id: string;
+  usuarioId: string;
+  nombre: string;
+  halcon: string;
+  rol: Rol;
+  turno: Turno;
+  iniciadoEn: string;
+  cerradoEn: string | null;
+  /** Lo que la persona anotó al recibir el turno. */
+  novedadesRecepcion: string;
+  /** Lo que deja anotado para el turno siguiente. */
+  novedadesEntrega: string;
+  resumen: ResumenTurnoCentral | null;
 }

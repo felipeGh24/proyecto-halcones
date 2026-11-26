@@ -40,12 +40,30 @@ const PERMISOS: Record<Rol, Accion[]> = {
   analista: ["exportar"],
 };
 
+/**
+ * Acceso total de la demostración: mientras la plataforma está a prueba, cualquier cuenta entra a los tres
+ * sistemas, a todas las pantallas y puede hacer todas las acciones, para probarlo todo sin cambiar de usuario.
+ * El rol solo decide a qué pantalla se llega primero. Al conectar la base real se desactiva y mandan
+ * ACCESO y PERMISOS (y la RLS de la base, que es la que de verdad protege los datos).
+ */
+let accesoTotal = true;
+export const accesoTotalActivo = () => accesoTotal;
+/** Solo para pruebas y para el modo producción. */
+export function configurarAccesoTotal(activo: boolean) {
+  accesoTotal = activo;
+}
+
 export function puede(rol: Rol, accion: Accion): boolean {
-  return PERMISOS[rol].includes(accion);
+  return accesoTotal || PERMISOS[rol].includes(accion);
 }
 
 export function tieneAcceso(rol: Rol, sistema: Sistema): boolean {
-  return ACCESO[sistema].includes(rol);
+  return accesoTotal || ACCESO[sistema].includes(rol);
+}
+
+/** ¿Puede este rol abrir una pantalla restringida a ciertos roles? */
+export function permiteRoles(rol: Rol, roles?: readonly Rol[]): boolean {
+  return accesoTotal || !roles || roles.includes(rol);
 }
 
 export const SISTEMAS: Record<Sistema, { nombre: string; descripcion: string; puertoDev: number }> = {

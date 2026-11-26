@@ -13,6 +13,7 @@ const Bitacora = pantalla("Bitacora");
 const Reportes = pantalla("Reportes");
 const Claves = pantalla("Claves");
 const Ajustes = pantalla("Ajustes");
+const TurnosCentral = pantalla("TurnosCentral");
 const Patrulla = lazy(async () => ({ default: (await import("./patrulla/Patrulla")).Patrulla }));
 
 const CENTRAL = ["administrador", "jefatura", "supervisor", "operador"] as const;
@@ -49,6 +50,7 @@ export function App() {
         <Route path="/central/moviles" element={<RutaProtegida roles={[...CENTRAL]}><Moviles /></RutaProtegida>} />
         <Route path="/central/bitacora" element={<RutaProtegida roles={[...CENTRAL]}><Bitacora /></RutaProtegida>} />
         <Route path="/central/reportes" element={<RutaProtegida roles={[...CENTRAL]}><Reportes /></RutaProtegida>} />
+        <Route path="/central/turnos" element={<RutaProtegida roles={[...CENTRAL]}><TurnosCentral /></RutaProtegida>} />
         <Route path="/central/claves" element={<RutaProtegida roles={[...CENTRAL]}><Claves /></RutaProtegida>} />
         <Route path="/central/ajustes" element={<RutaProtegida roles={["administrador", "supervisor"]}><Ajustes /></RutaProtegida>} />
         <Route path="/patrulla/*" element={<RutaProtegida roles={["patrullero", "administrador"]}><Patrulla /></RutaProtegida>} />

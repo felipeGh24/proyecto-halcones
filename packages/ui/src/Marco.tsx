@@ -28,7 +28,7 @@ function iniciales(nombre: string) {
     .join("");
 }
 
-export function Marco({ titulo, subtitulo, nav, acciones, children }: { titulo: string; subtitulo?: string; nav: ItemNav[]; acciones?: ReactNode; children: ReactNode }) {
+export function Marco({ titulo, subtitulo, nav, acciones, persona, children }: { titulo: string; subtitulo?: string; nav: ItemNav[]; acciones?: ReactNode; /** Quién está operando (por ejemplo, la persona del turno de Central) si no es el nombre de la cuenta. */ persona?: { nombre: string; detalle: string }; children: ReactNode }) {
   const { sesion, sistema, salir } = useSesion();
   const navegar = useNavigate();
   const usuario = sesion!.usuario;
@@ -93,11 +93,11 @@ export function Marco({ titulo, subtitulo, nav, acciones, children }: { titulo: 
           <Reloj />
           <div className="ui-usuario">
             <span className="ui-avatar" aria-hidden>
-              {iniciales(usuario.nombre)}
+              {iniciales(persona?.nombre ?? usuario.nombre)}
             </span>
             <div className="ui-usuario__datos">
-              <strong style={{ fontSize: 13 }}>{usuario.nombre}</strong>
-              <span className="ui-usuario__rol">{ROLES[usuario.rol].etiqueta}</span>
+              <strong style={{ fontSize: 13 }}>{persona?.nombre ?? usuario.nombre}</strong>
+              <span className="ui-usuario__rol">{persona?.detalle ?? ROLES[usuario.rol].etiqueta}</span>
             </div>
           </div>
         </div>

@@ -13,3 +13,4 @@ export { Bitacora } from "./Bitacora";
 export { Reportes } from "./Reportes";
 export { Claves } from "./Claves";
 export { Ajustes } from "./Ajustes";
+export { TurnosCentral } from "./TurnosCentral";
