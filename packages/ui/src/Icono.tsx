@@ -31,6 +31,8 @@ const TRAZOS = {
   atras: "M19 12H5M11 18l-6-6 6-6",
   pantalla: "M3 4h18v12H3zM8 20h8M12 16v4",
   filtro: "M22 3H2l8 9.5V19l4 2v-8.5L22 3z",
+  camara: "M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2v11zM12 17a4 4 0 100-8 4 4 0 000 8z",
+  video: "M23 7l-7 5 7 5V7zM14 5H3a2 2 0 00-2 2v10a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2z",
   actualizar: "M21 12a9 9 0 11-3-6.7L21 8M21 3v5h-5",
 } as const;
 

@@ -71,7 +71,7 @@ export function Patrulla() {
     <div className="patrulla patrulla--con-pestanas">
       <header className="patrulla__cabeza">
         <div>
-          <strong>
+          <strong className="patrulla__titulo">
             {turno.halcon ? `Halcón ${turno.halcon} · ` : ""}
             {turno.movil ? turno.movil.nombre : turno.puesto?.modalidad === "punto_fijo" ? "Punto fijo" : "A pie"}
           </strong>
@@ -82,7 +82,7 @@ export function Patrulla() {
         </div>
         <span className="patrulla__cabeza-acciones">
           {accesoTotalActivo() && (
-            <Link to="/central" className="enlace pequeno">
+            <Link to="/central" className="patrulla__enlace">
               Ir a la Central
             </Link>
           )}

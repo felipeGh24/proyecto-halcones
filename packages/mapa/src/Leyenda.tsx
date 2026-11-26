@@ -8,7 +8,7 @@ export function LeyendaMapa() {
       <strong>Procedimientos</strong>
       {(["rojo", "amarillo", "verde"] as const).map((s) => (
         <span key={s}>
-          <i style={{ background: SEMAFOROS[s].color }} />
+          <i style={{ background: SEMAFOROS[s].color, width: { rojo: 16, amarillo: 13, verde: 10 }[s], height: { rojo: 16, amarillo: 13, verde: 10 }[s] }} />
           {s === "rojo" ? "Crítica o alta" : s === "amarillo" ? "Media" : "Baja"}
         </span>
       ))}

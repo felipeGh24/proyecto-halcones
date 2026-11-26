@@ -64,7 +64,10 @@ h3 { font-size: 15px; font-weight: 600; }
 p { margin: 0; }
 button, input, select, textarea { font: inherit; color: inherit; }
 a { color: var(--primario); }
-:focus-visible { outline: none; box-shadow: var(--foco); }
+:focus-visible { outline: 2px solid transparent; outline-offset: 2px; box-shadow: var(--foco); }
+/* En modo de alto contraste de Windows la sombra desaparece: el contorno transparente se vuelve visible. */
+@media (forced-colors: active) { :focus-visible { outline-color: Highlight; } }
+.ui-segmentos button, .ui-nav, .ui-boton, .ui-demo__cuenta { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
 .num { font-variant-numeric: tabular-nums; }
 .texto-2 { color: var(--texto-2); }
@@ -138,7 +141,7 @@ a.ui-boton { text-decoration: none; }
   min-height: var(--alto-control); width: 100%; padding: 0 12px;
   background: var(--fondo); border: 1px solid var(--borde-fuerte); border-radius: var(--radio-sm);
 }
-.ui-entrada:focus { outline: none; border-color: var(--primario); box-shadow: var(--foco); }
+.ui-entrada:focus { outline: 2px solid transparent; border-color: var(--primario); box-shadow: var(--foco); }
 .ui-entrada--error { border-color: var(--rojo); }
 textarea.ui-entrada { padding: 10px 12px; min-height: 88px; resize: vertical; }
 select.ui-entrada { padding-right: 32px; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23475467' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
@@ -166,7 +169,7 @@ select.ui-entrada { padding-right: 32px; appearance: none; background-image: url
 .ui-marco__org { font-size: 11px; color: var(--texto-3); }
 .ui-marco__nav { padding: 12px; display: flex; flex-direction: column; gap: 2px; overflow: auto; flex: 1; }
 .ui-marco__seccion { font-size: 11px; font-weight: 600; color: var(--texto-3); text-transform: uppercase; letter-spacing: 0.06em; padding: 14px 10px 6px; }
-.ui-nav { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 10px; border-radius: var(--radio-sm); color: var(--texto-2); text-decoration: none; font-weight: 500; }
+.ui-nav { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 10px; border-radius: var(--radio-sm); color: var(--texto-2); text-decoration: none; font-weight: 500; }
 .ui-nav:hover { background: var(--superficie); color: var(--texto); }
 .ui-nav.active { background: var(--secundario-suave); color: var(--secundario); }
 .ui-nav__cuenta { margin-left: auto; font-size: 12px; font-variant-numeric: tabular-nums; }
@@ -220,7 +223,7 @@ select.ui-entrada { padding-right: 32px; appearance: none; background-image: url
 
 /* ---------- Pestañas segmentadas ---------- */
 .ui-segmentos { display: inline-flex; padding: 3px; background: var(--superficie); border: 1px solid var(--borde); border-radius: 8px; gap: 2px; }
-.ui-segmentos button { min-height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: var(--texto-2); font-weight: 500; cursor: pointer; }
+.ui-segmentos button { min-height: 40px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: var(--texto-2); font-weight: 500; cursor: pointer; }
 .ui-segmentos button[aria-pressed="true"] { background: var(--fondo); color: var(--texto); box-shadow: var(--sombra); font-weight: 600; }
 
 /* ---------- Aviso flotante ---------- */
@@ -256,7 +259,7 @@ select.ui-entrada { padding-right: 32px; appearance: none; background-image: url
 .adjuntos__mini img, video.adjuntos__mini { width: 100%; height: 100%; object-fit: cover; }
 .adjuntos__ausente { cursor: default; }
 .adjuntos__nombre { font-size: 11px; color: var(--texto-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.adjuntos__quitar { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; border: 0; background: rgba(14, 26, 43, 0.75); color: #fff; display: grid; place-items: center; cursor: pointer; }
+.adjuntos__quitar { position: absolute; top: 2px; right: 2px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgba(14, 26, 43, 0.75); color: #fff; display: grid; place-items: center; cursor: pointer; }
 
 /* ---------- Dirección con sugerencias ---------- */
 .ui-direccion { position: relative; display: grid; gap: 6px; }

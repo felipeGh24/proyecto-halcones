@@ -30,7 +30,13 @@ export function InicioTurno() {
   const [generales, setGenerales] = useState<Adjunto[]>([]);
   const [error, setError] = useState("");
   const conMovil = modalidad === "movil";
-  const listo = nombre.trim().length >= 3 && (conMovil ? movilId && /^\d+$/.test(km) : !!lugar);
+  const faltan = [
+    nombre.trim().length < 3 && "tu nombre",
+    conMovil && !movilId && "el móvil",
+    conMovil && !/^\d+$/.test(km) && "el kilometraje inicial (solo números)",
+    !conMovil && !lugar && "el lugar",
+  ].filter(Boolean) as string[];
+  const listo = faltan.length === 0;
   const ordenados = [...moviles].sort((a, b) => Number(!!a.turno) - Number(!!b.turno) || a.nombre.localeCompare(b.nombre));
 
   function iniciar() {
@@ -83,12 +89,12 @@ export function InicioTurno() {
     <div className="patrulla">
       <header className="patrulla__cabeza">
         <div>
-          <strong>Inicio de turno</strong>
+          <h1 className="patrulla__titulo">Inicio de turno</h1>
           <div className="pequeno texto-3">Halcones · app del patrullero</div>
         </div>
         <span className="patrulla__cabeza-acciones">
           {accesoTotalActivo() && (
-            <Link to="/central" className="enlace pequeno">
+            <Link to="/central" className="patrulla__enlace">
               Ir a la Central
             </Link>
           )}
@@ -215,7 +221,12 @@ export function InicioTurno() {
         )}
       </main>
       <footer className="patrulla__pie">
-        <Boton variante="primario" grande bloque disabled={!listo} onClick={iniciar}>
+        {!listo && (
+          <p className="patrulla__falta" id="inicio-falta" aria-live="polite">
+            Falta: {faltan.join(", ")}.
+          </p>
+        )}
+        <Boton variante="primario" grande bloque disabled={!listo} onClick={iniciar} aria-describedby={listo ? undefined : "inicio-falta"}>
           Iniciar turno
         </Boton>
       </footer>

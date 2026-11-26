@@ -3,8 +3,8 @@ import { guardarArchivo, tamano, urlDeAdjunto, type Adjunto } from "@plataforma/
 import { Icono } from "./Icono";
 
 const ORIGENES = [
-  { id: "foto", texto: "Tomar foto", icono: "ojo", accept: "image/*", capture: "environment", multiple: false },
-  { id: "video", texto: "Grabar video", icono: "pantalla", accept: "video/*", capture: "environment", multiple: false },
+  { id: "foto", texto: "Tomar foto", icono: "camara", accept: "image/*", capture: "environment", multiple: false },
+  { id: "video", texto: "Grabar video", icono: "video", accept: "video/*", capture: "environment", multiple: false },
   { id: "galeria", texto: "Galería", icono: "mas", accept: "image/*,video/*", capture: undefined, multiple: true },
 ] as const;
 
@@ -100,7 +100,7 @@ export function VistaAdjuntos({ adjuntos, onQuitar }: { adjuntos: Adjunto[]; onQ
                 )
               ) : (
                 <span className="adjuntos__mini adjuntos__ausente" title="El archivo está en el equipo que lo cargó; con la base de datos se verá en todos">
-                  <Icono nombre={a.tipo === "video" ? "pantalla" : "documento"} />
+                  <Icono nombre={a.tipo === "video" ? "video" : "documento"} />
                 </span>
               )}
               <span className="adjuntos__nombre" title={a.nombre}>

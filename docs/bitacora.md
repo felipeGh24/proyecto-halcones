@@ -166,3 +166,18 @@ Cada sesión agrega una entrada arriba: fecha, sistema, qué se hizo, qué qued�
 - **Avisos al patrullero:** pantalla roja con sonido y vibración («Te despacharon · vas a cargo» o «Te enviaron de apoyo») hasta tocar «Entendido»; con permiso, notificación del sistema si la app está en segundo plano. La Central ve si cada unidad confirmó. Los apoyos informan «En camino», «En el lugar» y «Terminé mi apoyo».
 - **Pruebas:** 45 pruebas de datos y 9 pruebas de navegador en `pruebas/e2e` (pytest + Playwright). Errores y su prueba en `docs/errores-y-lecciones.md`.
 - **Base de datos:** migraciones 0003 (turnos de Central, auditoría por turno) y 0004 (unidades por procedimiento, un solo a cargo, una unidad en un solo procedimiento, Realtime para avisos).
+
+## 9 · 26-11-2026 (noche) — Halcones: revisión de accesibilidad e interacción con UI/UX Pro Max
+
+Revisión de Halcones con las reglas del plugin UI/UX Pro Max (accesibilidad, tamaño táctil, foco, mapas) y medición automática con axe-core en Chrome (computador 1440 px y celular 390 px). La paleta «Claro institucional» del plan no cambia: el sistema de diseño que propone el plugin (fondo rosado, rojo como primario) no sirve para una central de despacho.
+
+- **Celular del patrullero a 56 px**, como pide el plan: botones, campos, selectores y los segmentos (En móvil / Punto fijo / A pie, OK / Observación). «Ir a la Central» pasa de enlace de 18 px a botón de 44 px. El checklist se apila en pantallas de menos de 380 px.
+- **«Iniciar turno» dice qué falta** (nombre, móvil, kilometraje o lugar) en vez de quedar desactivado sin explicación; el texto se anuncia a lectores de pantalla.
+- **Íconos correctos:** cámara para «Tomar foto» y cámara de video para «Grabar video» (antes ojo y monitor). Botón para quitar un adjunto de 24 a 32 px.
+- **Central a 44 px:** menú lateral, pestañas de la cola, turnos A-1/B-2/C-3, novedades, atajos de unidades, sugerencias de claves y zoom del mapa (antes 29–40 px).
+- **Cola de procedimientos:** lista con botones `aria-pressed` (antes `listbox` con `<li>` intermedios, inválido). Foco visible en cada tarjeta. La tarjeta roja sin despachar deja de parpadear si el equipo tiene «reducir movimiento».
+- **Mapa:** los nombres de barrio y números de UV ya no son «botones» invisibles para el teclado. Los procedimientos tienen tamaño según semáforo (rojo grande, amarillo mediano, verde chico) como segunda señal además del color; la leyenda usa los mismos tamaños.
+- **Foco en alto contraste de Windows:** contorno transparente que el sistema vuelve visible (la sombra azul desaparece en ese modo).
+- **Resultado:** axe-core sin fallas en ingreso, Central, nuevo procedimiento y app del patrullero (antes: 1 crítica, 2 serias, 1 moderada). Ningún control bajo 44 px en la Central ni bajo 56 px en el celular. 45 pruebas de datos y 12 de navegador pasan.
+- **Común:** cambios en `packages/ui` (foco, nav, segmentos, íconos `camara` y `video`) y `packages/mapa` (etiquetas, zoom, tamaño por semáforo): afectan también a Georreferenciado y Análisis, para bien.
+- **Próximo:** misma revisión en Georreferenciado y Análisis; marcadores de procedimientos con forma (no solo tamaño) cuando el mapa tenga íconos propios.

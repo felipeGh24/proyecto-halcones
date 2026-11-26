@@ -40,7 +40,7 @@ export function Cola({ procedimientos, moviles, seleccionId, onSeleccionar }: { 
           ]}
         />
       </header>
-      <ul className="cola__lista" role="listbox" aria-label="Procedimientos activos">
+      <ul className="cola__lista" aria-label="Procedimientos activos">
         {lista.length === 0 && (
           <li>
             <Vacio icono="check" titulo={filtro === "sin_despachar" ? "Todo despachado" : "Sin procedimientos activos"}>
@@ -56,8 +56,7 @@ export function Cola({ procedimientos, moviles, seleccionId, onSeleccionar }: { 
             <li key={p.id}>
               <button
                 type="button"
-                role="option"
-                aria-selected={p.id === seleccionId}
+                aria-pressed={p.id === seleccionId}
                 className={`tarjeta-proc tarjeta-proc--${info.semaforo} ${p.id === seleccionId ? "tarjeta-proc--sel" : ""} ${esperando && info.semaforo === "rojo" ? "tarjeta-proc--urgente" : ""}`}
                 onClick={() => onSeleccionar(p.id)}
               >

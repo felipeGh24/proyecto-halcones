@@ -128,6 +128,16 @@ interface PropsMapa {
   onCalle?: (nombre: string | null) => void;
 }
 
+/** Las etiquetas de barrio y UV son solo texto: no deben ser botones para el teclado ni para lectores de pantalla. */
+function etiquetaDecorativa(marker: Marker) {
+  const el = marker.getElement();
+  el.removeAttribute("role");
+  el.removeAttribute("aria-label");
+  el.setAttribute("aria-hidden", "true");
+  el.tabIndex = -1;
+  return marker;
+}
+
 function fcProcedimientos(procs: Procedimiento[], seleccionId: string | null) {
   return {
     type: "FeatureCollection" as const,
@@ -137,6 +147,8 @@ function fcProcedimientos(procs: Procedimiento[], seleccionId: string | null) {
       properties: {
         id: p.id,
         color: SEMAFOROS[semaforoDeClave(p.claveNumero)].color,
+        // Segunda señal además del color: rojo grande, amarillo mediano, verde chico.
+        tamano: { rojo: 9, amarillo: 7, verde: 5.5 }[semaforoDeClave(p.claveNumero)],
         critica: obtenerClave(p.claveNumero)?.prioridad === "critica" ? 1 : 0,
         sel: p.id === seleccionId ? 1 : 0,
         titulo: `${p.folio} · ${p.claveNumero} ${obtenerClave(p.claveNumero)?.nombre ?? ""}`,
@@ -311,7 +323,7 @@ export function Mapa({
         type: "circle",
         source: "procedimientos",
         paint: {
-          "circle-radius": ["case", ["==", ["get", "critica"], 1], 9, 7],
+          "circle-radius": ["case", ["==", ["get", "critica"], 1], 10, ["get", "tamano"]],
           "circle-color": ["get", "color"],
           "circle-stroke-color": "#FFFFFF",
           "circle-stroke-width": ["case", ["==", ["get", "sel"], 1], 3, 2],
@@ -424,7 +436,7 @@ export function Mapa({
         const el = document.createElement("span");
         el.className = "mapa-etiqueta-uv";
         el.textContent = String(f.properties.uv);
-        etiquetasHtml.current.push(new Marker({ element: el }).setLngLat([c.lng, c.lat]).addTo(m));
+        etiquetasHtml.current.push(etiquetaDecorativa(new Marker({ element: el })).setLngLat([c.lng, c.lat]).addTo(m));
       }
     }
     if (conBarrios) {
@@ -434,7 +446,7 @@ export function Mapa({
         const el = document.createElement("span");
         el.className = "mapa-etiqueta-barrio";
         el.textContent = b.replace(/^Barrio /, "");
-        etiquetasHtml.current.push(new Marker({ element: el }).setLngLat([c.lng, c.lat]).addTo(m));
+        etiquetasHtml.current.push(etiquetaDecorativa(new Marker({ element: el })).setLngLat([c.lng, c.lat]).addTo(m));
       }
     }
   }, [listo, conBarrios, conUVs]);
