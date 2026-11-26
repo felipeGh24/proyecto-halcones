@@ -12,6 +12,7 @@
     "dev:georreferenciado": "npm run dev -w @plataforma/georreferenciado",
     "dev:analisis": "npm run dev -w @plataforma/analisis",
     "build": "npm run build --workspaces --if-present",
+    "build:artefacto": "VITE_ENRUTADOR=hash npm run build --workspaces --if-present && node scripts/portada-artefacto.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "demo": "node scripts/servir-demo.mjs",
     "test": "vitest run",

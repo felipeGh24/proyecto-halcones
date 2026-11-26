@@ -15,8 +15,12 @@ export interface ItemNav {
 
 /** Dirección de cada sistema. En la demo publicada viven bajo el mismo dominio (/halcones, /georreferenciado, /analisis). */
 function urlSistema(s: Sistema): string {
-  const enDesarrollo = typeof location !== "undefined" && /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && location.port !== "4173";
-  return enDesarrollo ? `${location.protocol}//${location.hostname}:${SISTEMAS[s].puertoDev}/${s}/` : `/${s}/`;
+  // Versión para ver en Claude: los tres sistemas son carpetas hermanas y se navega con rutas relativas.
+  if (import.meta.env.VITE_ENRUTADOR === "hash") return `../${s}/index.html`;
+  // En desarrollo (npm run dev:*) cada sistema corre en su propio puerto; en la demo compilada, bajo el mismo dominio
+  // en cualquier puerto (antes fallaba si la demo arrancaba en 4174, 4175…).
+  if (import.meta.env.DEV) return `${location.protocol}//${location.hostname}:${SISTEMAS[s].puertoDev}/${s}/`;
+  return `/${s}/`;
 }
 
 function iniciales(nombre: string) {
