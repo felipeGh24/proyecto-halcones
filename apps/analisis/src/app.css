@@ -1,0 +1,24 @@
+.analisis { padding: 16px; display: grid; gap: 16px; align-content: start; }
+.filtros { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-end; padding: 14px 18px; }
+.filtros__grupo { display: grid; gap: 6px; }
+.filtros__grupo select { min-width: 220px; }
+.kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.kpis > * + * { border-left: 1px solid var(--borde); }
+.analisis__grilla { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.ancho-2 { grid-column: span 2; }
+.grafico { width: 100%; height: auto; display: block; font-family: var(--fuente); }
+.cumplimiento { display: grid; gap: 14px; }
+.cumplimiento__fila { display: grid; grid-template-columns: 260px minmax(0, 1fr) 120px; gap: 16px; align-items: center; }
+.cumplimiento__nombre { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.cumplimiento__nombre i { width: 10px; height: 10px; border-radius: 50%; }
+.cumplimiento__pista { height: 14px; background: var(--superficie-2); border-radius: 7px; overflow: hidden; }
+.cumplimiento__pista i { display: block; height: 100%; background: var(--primario); }
+.barras { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.barras li { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr) 44px; gap: 12px; align-items: center; font-size: 13px; }
+.barras__etiqueta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.barras__pista { height: 12px; background: var(--superficie); border-radius: 6px; overflow: hidden; }
+.barras__pista i { display: block; height: 100%; background: var(--primario); border-radius: 6px; }
+.barras__valor { text-align: right; font-weight: 600; }
+.informes { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; align-items: start; }
+@media (max-width: 1280px) { .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } .kpis > :nth-child(4) { border-left: 0; } }
+@media print { .analisis__grilla { grid-template-columns: 1fr; } .ancho-2 { grid-column: auto; } .ui-tarjeta { break-inside: avoid; box-shadow: none; } }

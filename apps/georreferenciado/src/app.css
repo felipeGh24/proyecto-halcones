@@ -1,0 +1,49 @@
+.geo { display: grid; grid-template-columns: 300px minmax(0, 1fr) auto; gap: 16px; padding: 16px; height: 100%; min-height: 600px; }
+.geo__panel { padding: 16px; display: grid; gap: 18px; align-content: start; overflow: auto; }
+.geo__mapa { overflow: hidden; min-height: 0; }
+.geo__detalle { width: 340px; overflow: auto; }
+.geo__buscar { position: relative; }
+.geo__buscar svg { position: absolute; left: 12px; top: 13px; color: var(--texto-3); }
+.geo__buscar .ui-entrada { padding-left: 38px; }
+.geo__resultados { list-style: none; margin: -10px 0 0; padding: 4px; border: 1px solid var(--borde); border-radius: 8px; display: grid; gap: 2px; }
+.geo__resultados button { width: 100%; text-align: left; display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 8px 10px; border: 0; background: transparent; border-radius: 6px; cursor: pointer; }
+.geo__resultados button:hover { background: var(--superficie); }
+.geo__resultados button > :nth-child(2) { grid-column: 1; }
+.geo__resultados button > :nth-child(3) { grid-column: 2; grid-row: 1 / 3; align-self: center; }
+.geo__capas { border: 0; margin: 0; padding: 0; display: grid; gap: 4px; }
+.geo__capas legend { font-weight: 600; font-size: 13px; margin-bottom: 6px; }
+.interruptor { display: flex; align-items: center; gap: 10px; min-height: 36px; cursor: pointer; }
+.interruptor input { width: 18px; height: 18px; accent-color: var(--primario); }
+.geo--historico { grid-template-columns: 340px minmax(0, 1fr); }
+.grupo { display: grid; gap: 8px; }
+.ranking { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ranking li { display: grid; grid-template-columns: 1fr 90px 32px; align-items: center; gap: 8px; font-size: 13px; }
+.ranking__nombre { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ranking__barra { height: 8px; background: var(--superficie); border-radius: 4px; overflow: hidden; }
+.ranking__barra i { display: block; height: 100%; background: var(--primario); border-radius: 4px; }
+.ranking .num { text-align: right; }
+
+.panel { display: flex; flex-direction: column; }
+.panel__cabeza { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 12px 8px 18px; border-bottom: 1px solid var(--borde); }
+.panel__cuerpo { padding: 14px 18px; display: grid; gap: 10px; }
+.panel__bloque { display: grid; gap: 8px; border-top: 1px solid var(--borde); padding-top: 12px; }
+.panel__bloque h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--texto-2); }
+.panel__movil { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.detalle-fila { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mini-linea { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
+
+.muro { position: fixed; inset: 0; }
+.muro .mapa { position: absolute; inset: 0; }
+.muro__cifras { position: absolute; top: 20px; left: 20px; right: 20px; display: flex; align-items: center; gap: 32px; padding: 14px 24px; }
+.muro__cifras div { display: grid; }
+.muro__cifras span { font-size: 13px; color: var(--texto-2); }
+.muro__cifras strong { font-family: var(--fuente-titulo); font-size: 36px; line-height: 1.1; }
+.muro__cifras .alerta strong { color: var(--rojo); }
+.muro__cifras .ui-reloj { margin-left: auto; font-size: 36px; }
+.muro__leyenda { position: absolute; left: 20px; bottom: 20px; padding: 14px 16px; }
+.muro__salir { position: absolute; right: 70px; bottom: 20px; text-decoration: none; }
+
+@media (max-width: 1200px) {
+  .geo { grid-template-columns: 260px minmax(0, 1fr); }
+  .geo__detalle { position: fixed; right: 16px; top: 80px; bottom: 16px; z-index: 5; box-shadow: var(--sombra-flotante); }
+}
