@@ -1,0 +1,40 @@
+.mapa { position: relative; width: 100%; height: 100%; min-height: 200px; background: var(--superficie, #f4f6fa); overflow: hidden; }
+.mapa__lienzo { position: absolute !important; inset: 0; width: 100%; height: 100%; }
+.mapa__base { position: absolute; left: 12px; bottom: 12px; font-size: 11px; color: var(--texto-3); background: rgba(255, 255, 255, 0.92); border: 1px solid var(--borde); border-radius: 6px; padding: 4px 8px; pointer-events: none; }
+.mapa__aviso { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: var(--texto-2); }
+.mapa-popup .maplibregl-popup-content { font-family: var(--fuente); font-size: 12px; padding: 6px 10px; border-radius: 6px; box-shadow: var(--sombra-flotante); color: var(--texto); }
+.mapa-leyenda { display: grid; gap: 6px; font-size: 12px; color: var(--texto-2); }
+.mapa-leyenda strong { color: var(--texto); font-size: 12px; margin-top: 4px; }
+.mapa-leyenda span { display: flex; align-items: center; gap: 8px; }
+.mapa-leyenda i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--borde); display: inline-block; }
+.mapa-leyenda i.anillo { background: #fff; border-width: 3px; box-shadow: none; }
+.mapa-leyenda i.anillo.grueso { border-width: 4px; }
+.mapa-etiqueta-uv { font: 600 10px var(--fuente); color: var(--texto-2); background: rgba(255, 255, 255, 0.85); border-radius: 4px; padding: 0 3px; pointer-events: none; }
+.mapa-etiqueta-barrio { font: 600 12px var(--fuente-titulo); color: var(--texto); text-transform: uppercase; letter-spacing: 0.06em; background: rgba(255, 255, 255, 0.9); border: 1px solid var(--borde); border-radius: 6px; padding: 2px 8px; pointer-events: none; white-space: nowrap; }
+.mapa-marca { font: 600 11px var(--fuente); border-radius: 999px; padding: 3px 9px; border: 2px solid #fff; color: #fff; cursor: pointer; box-shadow: 0 2px 6px rgba(16, 24, 40, 0.25); white-space: nowrap; }
+.mapa-marca--punto_fijo { background: #0F766E; }
+.mapa-marca--patrullaje { background: #1D4ED8; }
+.mapa-marca--alza { background: #DC6803; }
+.mapa-marca--respuesta { background: #475467; }
+.mapa-escala { display: grid; gap: 4px; font-size: 11px; color: var(--texto-2); }
+.mapa-escala__barra { height: 10px; border-radius: 5px; background: linear-gradient(90deg, rgb(239, 244, 255), rgb(23, 37, 84)); }
+.mapa-escala__extremos { display: flex; justify-content: space-between; }
+.mapa-leyenda i.cuadro { border-radius: 3px; border: 1px solid #98A2B3; box-shadow: none; }
+/* Etiquetas según el acercamiento: lejos, nombres de barrio; cerca, números de UV. */
+.mapa--cerca .mapa-etiqueta-barrio { display: none; }
+.mapa:not(.mapa--cerca):not(.mapa--uv-siempre) .mapa-etiqueta-uv { display: none; }
+.mapa-poi { min-width: 22px; height: 22px; padding: 0 5px; border-radius: 6px; display: grid; place-items: center; font: 700 11px var(--fuente); color: #fff; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(16, 24, 40, 0.3); cursor: default; }
+.mapa-poi--municipal { background: #0F766E; }
+.mapa-poi--salud { background: #6941C6; }
+.mapa-poi--bomberos { background: #C11574; }
+.mapa-poi--policia { background: #155B75; }
+.mapa-poi--educacion { background: #3538CD; }
+.mapa-poi--seguridad { background: #1D4ED8; }
+.mapa-poi--otro { background: #475467; }
+.maplibregl-ctrl-attrib { font-size: 10px; }
+.mapa-marca--personal { background: #fff; color: #0F766E; border-color: #0F766E; font-size: 10.5px; padding: 2px 7px; }
+.mapa-marca--reporte { background: #fff; color: #1D4ED8; border-color: #1D4ED8; font-size: 10.5px; padding: 2px 6px; }
+
+/* Controles de zoom con área táctil de 44 px. */
+.mapa .maplibregl-ctrl-group button { width: 44px; height: 44px; }
+.mapa .maplibregl-ctrl-group button:focus-visible { box-shadow: var(--foco); }

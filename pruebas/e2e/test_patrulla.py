@@ -1,0 +1,88 @@
+"""Patrullero: turno con checklist y fotos, despacho automático, estados, reportes, cambio de móvil."""
+from conftest import URL
+
+
+def test_flujo_patrulla_y_central(pagina, foto):
+    p = pagina.page
+    p.set_viewport_size({"width": 390, "height": 844})
+    pagina.entrar("patrullero@demo.cl")
+    p.select_option("#movil", "MOVIL-03")
+    p.fill("#halcon", "12")
+    p.fill("#km", "84250")
+    p.locator(".checklist__item").nth(1).locator("text=Observación").click()
+    p.locator(".checklist__obs textarea").fill("Sirena intermitente")
+    p.locator(".checklist__obs input[data-origen=galeria]").set_input_files(foto)
+    p.wait_for_timeout(600)
+    p.click("text=Iniciar turno >> nth=-1")
+    p.wait_for_timeout(800)
+    assert "Disponible" in pagina.texto()
+
+    # Central: el móvil se asigna solo al elegir la dirección.
+    p.set_viewport_size({"width": 1440, "height": 950})
+    pagina.entrar("operador@demo.cl")
+    pagina.abrir_turno_central()
+    p.click("text=Nuevo procedimiento")
+    p.fill("[role=combobox] >> nth=0", "robo")
+    p.keyboard.press("Enter")
+    p.click("#direccion")
+    p.keyboard.type("Independencia 3499", delay=20)
+    p.wait_for_timeout(2200)
+    p.keyboard.press("Enter")
+    p.wait_for_timeout(800)
+    assert "Móvil 03" in p.text_content(".asignacion")
+    p.locator("button", has_text="Crear y despachar a Móvil 03").click()
+    p.wait_for_timeout(800)
+
+    # Patrullero: estados, reporte con foto y complemento.
+    p.set_viewport_size({"width": 390, "height": 844})
+    pagina.entrar("patrullero@demo.cl")
+    assert "67 · Robo" in pagina.texto()
+    assert "Te despacharon" in pagina.texto(), "Debe aparecer el aviso de despacho"
+    p.click("text=Entendido")
+    p.wait_for_timeout(400)
+    assert "Te despacharon" not in pagina.texto()
+    for t in ["Voy en camino", "Llegué al lugar", "Iniciar procedimiento"]:
+        p.click(f"text={t}")
+        p.wait_for_timeout(400)
+    p.click("text=Enviar reporte")
+    p.fill("#obs-rep", "Se entrevista a la víctima.")
+    p.locator(".ui-modal input[data-origen=galeria]").set_input_files(foto)
+    p.wait_for_timeout(600)
+    p.click("text=Enviar a la Central")
+    p.wait_for_timeout(600)
+    p.click(".patrulla__pestanas >> text=Reportes")
+    p.click("text=Añadir a este reporte")
+    p.fill("#comp", "Llega Carabineros.")
+    p.locator(".ui-modal button", has_text="Añadir").last.click()
+    p.wait_for_timeout(500)
+    assert "+1 añadidos" in pagina.texto()
+    p.click(".patrulla__pestanas >> text=Inicio")
+    p.click("text=Finalizar procedimiento")
+    p.click("text=Se coordina con Carabineros")
+    p.locator(".ui-modal button", has_text="Finalizar").last.click()
+    p.wait_for_timeout(600)
+
+    # Cambio a punto fijo: cierra la bitácora del móvil.
+    p.click(".patrulla__pestanas >> text=Mi turno")
+    p.click("text=Cambiar de móvil o modalidad")
+    p.fill("#kmf", "84100")
+    p.wait_for_timeout(200)
+    assert "menor" in p.text_content(".ui-modal"), "Debe rechazar un km final menor al inicial"
+    p.fill("#kmf", "84290")
+    p.click("text=Cerrar bitácora y continuar")
+    p.wait_for_timeout(800)
+    p.click("text=Punto fijo")
+    p.select_option("#lugar", index=1)
+    p.click("text=Iniciar turno >> nth=-1")
+    p.wait_for_timeout(700)
+    assert "Punto fijo" in pagina.texto()
+
+    # Central: reporte, bitácora del móvil y registro de acciones.
+    p.set_viewport_size({"width": 1440, "height": 950})
+    pagina.entrar("supervisor@demo.cl")
+    pagina.abrir_turno_central("Supervisora Prueba", "1")
+    pagina.ir("/halcones/central/reportes", 800)
+    assert "Halcón 12" in pagina.texto()
+    pagina.ir("/halcones/central/bitacora", 800)
+    assert "Móvil 03" in pagina.texto() and "40" in pagina.texto()
+    pagina.sin_errores()

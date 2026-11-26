@@ -1,0 +1,68 @@
+import { SEMAFOROS } from "@plataforma/datos";
+import { COLORES_BARRIO } from "./Mapa";
+
+/** Leyenda del mapa: el color siempre va con su texto. */
+export function LeyendaMapa() {
+  return (
+    <div className="mapa-leyenda" aria-label="Leyenda del mapa">
+      <strong>Procedimientos</strong>
+      {(["rojo", "amarillo", "verde"] as const).map((s) => (
+        <span key={s}>
+          <i style={{ background: SEMAFOROS[s].color, width: { rojo: 16, amarillo: 13, verde: 10 }[s], height: { rojo: 16, amarillo: 13, verde: 10 }[s] }} />
+          {s === "rojo" ? "Crítica o alta" : s === "amarillo" ? "Media" : "Baja"}
+        </span>
+      ))}
+      <strong>Móviles</strong>
+      <span>
+        <i className="anillo" style={{ borderColor: "#0F766E" }} />
+        Disponible
+      </span>
+      <span>
+        <i className="anillo grueso" style={{ borderColor: "#1D4ED8" }} />
+        Asignado
+      </span>
+      <span>
+        <i className="anillo" style={{ borderColor: "#98A2B3" }} />
+        Fuera de servicio o sin señal
+      </span>
+      <span>
+        <i className="cuadro" style={{ background: "#fff", borderColor: "#0F766E", borderWidth: 2 }} />
+        Punto fijo o a pie
+      </span>
+      <strong>Reportes de terreno</strong>
+      <span>
+        <i className="cuadro" style={{ background: "#fff", borderColor: "#1D4ED8", borderWidth: 2 }} />
+        PP preventivo · PE punto estático · PR procedimiento
+      </span>
+    </div>
+  );
+}
+
+/** Escala del mapa coroplético. */
+export function EscalaCoropleta({ titulo, min, max }: { titulo: string; min: string; max: string }) {
+  return (
+    <div className="mapa-escala">
+      <strong style={{ color: "var(--texto)" }}>{titulo}</strong>
+      <span className="mapa-escala__barra" aria-hidden />
+      <span className="mapa-escala__extremos">
+        <span>{min}</span>
+        <span>{max}</span>
+      </span>
+    </div>
+  );
+}
+
+/** Leyenda de los colores de barrio. */
+export function LeyendaBarrios() {
+  return (
+    <div className="mapa-leyenda" aria-label="Barrios">
+      <strong>Barrios</strong>
+      {Object.entries(COLORES_BARRIO).map(([b, c]) => (
+        <span key={b}>
+          <i className="cuadro" style={{ background: c }} />
+          {b.replace(/^Barrio /, "")}
+        </span>
+      ))}
+    </div>
+  );
+}
