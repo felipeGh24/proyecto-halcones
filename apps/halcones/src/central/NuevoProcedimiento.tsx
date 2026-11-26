@@ -23,6 +23,7 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
   const [calle, setCalle] = useState<string | null>(null);
   const [puntos] = useState(() => leerPuntosInteres());
   const [avisoRecinto, setAvisoRecinto] = useState("");
+  const [verLista, setVerLista] = useState(false);
   const uv = punto ? unidadVecinalDe(punto) : null;
   const historial = punto ? historialCercano(procedimientos, punto) : null;
   const masCercano = punto ? movilesCercanos(moviles, punto, 1)[0] : undefined;
@@ -63,7 +64,7 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
             {puedeDespachar ? "Crear sin despachar" : "Crear"}
           </Boton>
           {puedeDespachar && (
-            <Boton variante="primario" icono="enviar" onClick={() => crear(true)} disabled={!destino} title={destino ? "" : "No hay móviles libres con patrullero en turno"}>
+            <Boton variante="primario" icono="enviar" onClick={() => crear(true)} disabled={!destino} title={destino ? "" : punto ? "No hay móviles libres con patrullero en turno" : "Marca el punto en el mapa para asignar el móvil más cercano"}>
               Crear y despachar{destino ? ` a ${destino.nombre}` : ""}
             </Boton>
           )}
@@ -79,10 +80,38 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
       >
         <div className="nuevo__datos">
           <BuscadorClave valor={clave} onElegir={setClave} error={errores.clave} />
-          <Campo etiqueta="Dirección o referencia" htmlFor="direccion" error={errores.direccion}>
-            <input id="direccion" className={`ui-entrada ${errores.direccion ? "ui-entrada--error" : ""}`} value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Calle, número y referencia" autoComplete="off" />
+          <Campo etiqueta="Dirección" htmlFor="direccion" error={errores.direccion} ayuda="Calle y número, o esquina. Al marcar el punto se propone la calle más cercana.">
+            <input id="direccion" className={`ui-entrada nuevo__direccion ${errores.direccion ? "ui-entrada--error" : ""}`} value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Calle, número y referencia" autoComplete="off" />
           </Campo>
-          <Campo etiqueta="Ir a una unidad vecinal" htmlFor="uv" ayuda="Acerca el mapa; después marca el punto exacto con un clic.">
+          <Campo etiqueta="Descripción" htmlFor="descripcion" ayuda="Qué pasa, en pocas palabras. Evita datos personales que no sean necesarios.">
+            <textarea id="descripcion" className="ui-entrada" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={500} />
+          </Campo>
+          {puedeDespachar && (
+            <section className="asignacion" aria-label="Asignación del móvil">
+              <span className="ui-campo__etiqueta">Móvil asignado automáticamente</span>
+              {!punto ? (
+                <span className="ui-campo__ayuda">Marca el punto en el mapa: el sistema elige el móvil libre con patrullero en turno más cercano.</span>
+              ) : destino ? (
+                <div className="asignacion__elegido">
+                  <div>
+                    <strong>{destino.nombre}</strong>
+                    <span className="pequeno texto-2"> · {destino.turno?.patrullero}</span>
+                    <div className="pequeno texto-3">{elegidoLibre ? "Elegido por el operador" : "El libre más cercano al punto"}</div>
+                  </div>
+                  <button type="button" className="ui-boton ui-boton--fantasma" onClick={() => setVerLista((v) => !v)}>
+                    {verLista ? "Ocultar móviles" : "Cambiar móvil"}
+                  </button>
+                </div>
+              ) : (
+                <span className="ui-campo__error">No hay móviles libres con patrullero en turno. Se creará sin despachar.</span>
+              )}
+              {punto && verLista && <ListaDespacho punto={punto} moviles={moviles} procedimientos={procedimientos} elegido={destino?.id ?? null} onElegir={(m) => setMovilElegido(m.id)} />}
+            </section>
+          )}
+          <details className="ayudas">
+            <summary>Ayudas para ubicar (opcional): unidad vecinal o recinto</summary>
+            <div className="ayudas__cuerpo">
+          <Campo etiqueta="Unidad vecinal" htmlFor="uv" ayuda="Acerca el mapa; después marca el punto exacto con un clic.">
             <select
               id="uv"
               className="ui-entrada"
@@ -102,7 +131,7 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
               ))}
             </select>
           </Campo>
-          <Campo etiqueta="O en un recinto (GAMA o asistencial)" htmlFor="recinto" ayuda={avisoRecinto || "Pone el punto y la dirección del recinto."}>
+          <Campo etiqueta="Recinto (GAMA o asistencial)" htmlFor="recinto" ayuda={avisoRecinto || "Pone el punto y la dirección del recinto."}>
             <select
               id="recinto"
               className="ui-entrada"
@@ -132,19 +161,8 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
               ))}
             </select>
           </Campo>
-          <Campo etiqueta="Descripción" htmlFor="descripcion" ayuda="Breve. Evita datos personales que no sean necesarios.">
-            <textarea id="descripcion" className="ui-entrada" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={500} />
-          </Campo>
-          {puedeDespachar && (
-            <div className="ui-campo">
-              <span className="ui-campo__etiqueta">Asignar a</span>
-              {punto ? (
-                <ListaDespacho punto={punto} moviles={moviles} procedimientos={procedimientos} elegido={destino?.id ?? null} onElegir={(m) => setMovilElegido(m.id)} />
-              ) : (
-                <span className="ui-campo__ayuda">Marca el punto en el mapa para ver los móviles en turno más cercanos.</span>
-              )}
             </div>
-          )}
+          </details>
           <button type="submit" hidden />
         </div>
         <div className="nuevo__mapa">

@@ -137,3 +137,64 @@ kbd { font-family: var(--fuente); font-size: 11px; border: 1px solid var(--borde
 .sugerencias li { display: grid; padding: 10px 12px; border: 1px solid var(--borde); border-left: 3px solid var(--secundario); border-radius: 8px; }
 .novedades { display: flex; flex-wrap: wrap; gap: 6px; }
 .novedades .ui-boton { min-height: 40px; font-size: 13px; padding: 0 12px; }
+
+/* ---------- Reportes de terreno (Central) ---------- */
+.reportes { grid-template-columns: minmax(320px, 400px) minmax(0, 1fr); align-items: start; }
+.reportes__lista { overflow: hidden; }
+.reportes__cabeza { padding: 12px; border-bottom: 1px solid var(--borde); }
+.reportes__lista ul { list-style: none; margin: 0; padding: 8px; display: grid; gap: 6px; max-height: calc(100vh - 200px); overflow: auto; }
+.reporte-fila { all: unset; box-sizing: border-box; width: 100%; display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--borde); border-radius: 8px; cursor: pointer; }
+.reporte-fila:hover { background: #fbfcfe; }
+.reporte-fila--nuevo { border-left: 4px solid var(--primario); }
+.reporte-fila--sel { border-color: var(--primario); box-shadow: 0 0 0 1px var(--primario); }
+.reporte-fila__arriba { display: flex; justify-content: space-between; gap: 8px; }
+.reporte-fila__chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.reportes__detalle { min-height: 300px; }
+.reporte { padding: 18px 20px; display: grid; gap: 16px; }
+.reporte h3 { font-size: 13px; color: var(--texto-2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.reporte__datos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.reporte__datos div { background: var(--superficie); border-radius: 8px; padding: 8px 10px; }
+.reporte__datos dt { font-size: 11px; color: var(--texto-3); }
+.reporte__datos dd { margin: 0; font-weight: 600; }
+.reporte__proc { padding: 8px 12px; border-radius: 8px; background: var(--primario-suave); }
+.reporte__complemento { border-left: 3px solid var(--borde-fuerte); padding-left: 12px; }
+.buscador-clave__lista { max-height: 360px; }
+.nuevo__direccion { font-size: 16px; min-height: 48px; }
+.asignacion { display: grid; gap: 8px; padding: 12px 14px; border-radius: 10px; background: var(--superficie); border: 1px solid var(--borde); }
+.asignacion__elegido { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ayudas { border: 1px solid var(--borde); border-radius: 10px; padding: 0 14px; }
+.ayudas summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 500; color: var(--texto-2); }
+.ayudas__cuerpo { display: grid; gap: 12px; padding-bottom: 14px; }
+
+/* ---------- App del patrullero: pestañas, reportes, bitácora ---------- */
+.patrulla--con-pestanas { grid-template-rows: auto 1fr auto; }
+.patrulla__inicio { display: grid; gap: 12px; }
+.patrulla__pestanas { position: sticky; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--borde); background: var(--fondo); padding-bottom: env(safe-area-inset-bottom); }
+.patrulla__pestanas button { all: unset; display: grid; justify-items: center; gap: 2px; padding: 8px 0 10px; font-size: 12px; color: var(--texto-3); cursor: pointer; min-height: 56px; }
+.patrulla__pestanas button[aria-current="page"] { color: var(--primario); font-weight: 600; }
+.pestana { display: grid; gap: 16px; }
+.pestana h1 { font-size: 20px; }
+.pestana__cabeza { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.pestana__sub { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--texto-2); margin-bottom: 8px; }
+.lista-patrulla { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.tarjeta-reporte { border: 1px solid var(--borde); border-radius: 10px; overflow: hidden; }
+.tarjeta-reporte__cabeza { all: unset; box-sizing: border-box; width: 100%; display: grid; gap: 4px; padding: 12px 14px; cursor: pointer; }
+.tarjeta-reporte__cuerpo { padding: 0 14px 14px; display: grid; gap: 10px; }
+.fila-proc { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--borde); border-radius: 8px; }
+.bitacora-patrulla { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.bitacora-patrulla__item { display: grid; grid-template-columns: 48px 1fr; gap: 10px; padding: 8px 0 8px 12px; border-left: 3px solid var(--borde); }
+.bitacora-patrulla__item--procedimiento { border-left-color: var(--primario); }
+.bitacora-patrulla__item--reporte { border-left-color: var(--secundario); }
+.datos-turno { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; }
+.datos-turno div { background: var(--superficie); border-radius: 8px; padding: 8px 10px; }
+.datos-turno dt { font-size: 11px; color: var(--texto-3); }
+.datos-turno dd { margin: 0; font-weight: 600; }
+.form-patrulla { display: grid; gap: 14px; }
+.form-patrulla .ui-segmentos { display: flex; flex-wrap: wrap; }
+.form-patrulla .ui-segmentos button { flex: 1; min-height: 44px; }
+.dato { display: grid; background: var(--superficie); border-radius: 8px; padding: 8px 10px; }
+.dato span { font-size: 11px; color: var(--texto-3); }
+.checklist__bloque { display: grid; gap: 8px; }
+.checklist__obs { display: grid; gap: 8px; padding: 8px 0 8px 12px; border-left: 3px solid var(--ambar); }
+.patrulla .ui-modal { width: 100%; }
+@media (max-width: 600px) { .patrulla .ui-velo { padding: 0; align-items: end; } .patrulla .ui-modal { border-radius: 14px 14px 0 0; max-height: 94vh; } }

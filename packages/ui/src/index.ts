@@ -5,3 +5,4 @@ export * from "./Icono";
 export * from "./sesion";
 export * from "./Marco";
 export * from "./PantallaIngreso";
+export * from "./adjuntos";

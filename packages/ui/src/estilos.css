@@ -240,3 +240,14 @@ select.ui-entrada { padding-right: 32px; appearance: none; background-image: url
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* ---------- Fotos y videos ---------- */
+.adjuntos { display: grid; gap: 8px; }
+.adjuntos__boton { justify-self: start; }
+.adjuntos__lista { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.adjuntos__item { position: relative; display: grid; gap: 2px; width: 104px; }
+.adjuntos__mini { all: unset; box-sizing: border-box; width: 104px; height: 78px; border-radius: 8px; overflow: hidden; background: var(--superficie); border: 1px solid var(--borde); display: grid; place-items: center; cursor: pointer; color: var(--texto-3); }
+.adjuntos__mini img, video.adjuntos__mini { width: 100%; height: 100%; object-fit: cover; }
+.adjuntos__ausente { cursor: default; }
+.adjuntos__nombre { font-size: 11px; color: var(--texto-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.adjuntos__quitar { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; border: 0; background: rgba(14, 26, 43, 0.75); color: #fff; display: grid; place-items: center; cursor: pointer; }

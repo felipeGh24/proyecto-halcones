@@ -9,3 +9,5 @@ export * from "./cliente";
 export * from "./indicadores";
 export * from "./patrones";
 export * from "./puntos-interes";
+export * from "./adjuntos";
+export { datosVacios } from "./demo/semilla";

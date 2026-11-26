@@ -7,7 +7,7 @@ const patrullero = USUARIOS_DEMO.find((u) => u.rol === "patrullero")!;
 
 describe("turnos y despacho", () => {
   const c = obtenerCliente();
-  c.reiniciar();
+  c.reiniciar("ejemplo");
 
   it("no permite despachar a un móvil sin turno", () => {
     const p = c.crearProcedimiento({ claveNumero: 67, descripcion: "", direccion: "Prueba", ubicacion: { lat: -33.385, lng: -70.672 } }, operador);
@@ -46,5 +46,30 @@ describe("turnos y despacho", () => {
     expect(() => c.iniciarTurnoPersonal({ patrullero: "x", acompanante: "", modalidad: "a_pie", lugar: "UV 1", ubicacion: { lat: 0, lng: 0 } }, patrullero)).toThrow();
     c.cerrarTurnoPersonal(t.id, patrullero);
     expect(c.instantanea().personal.some((x) => x.id === t.id)).toBe(false);
+  });
+});
+
+describe("inicio vacío y reportes", () => {
+  const c = obtenerCliente();
+
+  it("arranca sin procedimientos y con móviles sin turno", () => {
+    c.reiniciar("vacio");
+    const d = c.instantanea();
+    expect(d.procedimientos.length).toBe(0);
+    expect(d.reportes.length).toBe(0);
+    expect(d.moviles.every((m) => m.estado === "sin_turno")).toBe(true);
+  });
+
+  it("registra un reporte con UV y permite complementarlo solo a su autor", () => {
+    c.reiniciar("vacio");
+    const r = c.enviarReporte(
+      { tipo: "patrullaje_preventivo", halcon: "12", unidad: "MOVIL-01", patrullero: "Prueba", direccion: "Independencia 3499", ubicacion: { lat: -33.385, lng: -70.672 }, procedimientoId: null, observaciones: "Sin novedad", adjuntos: [] },
+      patrullero,
+    );
+    expect(r.folio).toBe("R-00001");
+    expect(r.unidadVecinal).not.toBeNull();
+    c.complementarReporte(r.id, "Se agrega foto", [], patrullero);
+    expect(c.instantanea().reportes[0].complementos.length).toBe(1);
+    expect(() => c.complementarReporte(r.id, "x", [], operador)).toThrow();
   });
 });

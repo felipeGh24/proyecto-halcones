@@ -29,3 +29,9 @@ export const ESTADOS_MOVIL: Record<EstadoMovil, { etiqueta: string; tono: "ok" |
   en_procedimiento: { etiqueta: "En procedimiento", tono: "alerta" },
   fuera_de_servicio: { etiqueta: "Fuera de servicio", tono: "neutro" },
 };
+
+export const TIPOS_REPORTE: Record<import("./tipos").TipoReporte, string> = {
+  patrullaje_preventivo: "Patrullaje preventivo",
+  procedimiento: "Procedimiento",
+  punto_estatico: "Punto estático",
+};

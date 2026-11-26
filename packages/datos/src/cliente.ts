@@ -1,9 +1,9 @@
 import { useSyncExternalStore } from "react";
 import { obtenerClave } from "./claves";
-import { generarDemo, folio, type DatosDemo } from "./demo/semilla";
+import { datosVacios, generarDemo, folio, type DatosDemo } from "./demo/semilla";
 import { esActivo, SIGUIENTE } from "./estados";
 import { distanciaMetros, unidadVecinalDe } from "./geo";
-import type { CierreTurno, EstadoMovil, EstadoProcedimiento, Movil, Procedimiento, Punto, RegistroTurno, TurnoMovil, TurnoPersonal, Usuario } from "./tipos";
+import type { Adjunto, CierreTurno, EstadoMovil, EstadoProcedimiento, Movil, Procedimiento, Punto, RegistroTurno, Reporte, TipoReporte, TurnoMovil, TurnoPersonal, Usuario } from "./tipos";
 
 /**
  * Cliente de datos de la plataforma.
@@ -24,7 +24,20 @@ export interface Instantanea {
   moviles: Movil[];
   personal: TurnoPersonal[];
   historialTurnos: RegistroTurno[];
+  reportes: Reporte[];
   actualizadoEn: number;
+}
+
+export interface NuevoReporte {
+  tipo: TipoReporte;
+  halcon: string;
+  unidad: string;
+  patrullero: string;
+  direccion: string;
+  ubicacion: Punto | null;
+  procedimientoId: string | null;
+  observaciones: string;
+  adjuntos: Adjunto[];
 }
 
 export interface ClienteDatos {
@@ -46,14 +59,19 @@ export interface ClienteDatos {
   /** Turno de punto fijo o a pie (sin móvil). */
   iniciarTurnoPersonal(datos: Omit<TurnoPersonal, "id" | "usuarioId" | "iniciadoEn">, por: Usuario): TurnoPersonal;
   cerrarTurnoPersonal(id: string, por: Usuario, cierre?: CierreTurno): void;
+  /** El patrullero envía un reporte a la Central. */
+  enviarReporte(r: NuevoReporte, por: Usuario): Reporte;
+  /** Añade texto, fotos o videos a un reporte ya enviado. */
+  complementarReporte(id: string, texto: string, adjuntos: Adjunto[], por: Usuario): void;
+  marcarReporteLeido(id: string): void;
   /** Solo demo: avanza un paso de la operación simulada. */
   simularPaso(): void;
-  /** Solo demo: vuelve a los datos de ejemplo iniciales. */
-  reiniciar(): void;
+  /** Solo demo: «vacio» deja la flota sin turnos ni procedimientos; «ejemplo» carga 90 días de datos ficticios. */
+  reiniciar(modo?: "vacio" | "ejemplo"): void;
   readonly modo: "demo" | "supabase";
 }
 
-const CLAVE_ALMACEN = "plataforma.demo.v5";
+const CLAVE_ALMACEN = "plataforma.datos.v6";
 const CANAL = "plataforma-demo";
 
 class ClienteDemo implements ClienteDatos {
@@ -84,7 +102,8 @@ class ClienteDemo implements ClienteDatos {
     } catch {
       /* datos dañados: se regeneran */
     }
-    const nuevo = { ...generarDemo(), actualizadoEn: Date.now() };
+    // Se parte vacío: solo la flota. Los datos de ejemplo se cargan a pedido (Ajustes de la demo).
+    const nuevo = { ...datosVacios(), actualizadoEn: Date.now() };
     this.guardarEn(nuevo);
     return nuevo;
   }
@@ -115,6 +134,7 @@ class ClienteDemo implements ClienteDatos {
       moviles: this.datos.moviles,
       personal: this.datos.personal ?? [],
       historialTurnos: this.datos.historialTurnos ?? [],
+      reportes: this.datos.reportes ?? [],
       actualizadoEn: this.datos.actualizadoEn,
     };
   }
@@ -326,8 +346,45 @@ class ClienteDemo implements ClienteDatos {
     }
   }
 
-  reiniciar() {
-    this.datos = { ...generarDemo(), actualizadoEn: Date.now() };
+  reiniciar(modo: "vacio" | "ejemplo" = "ejemplo") {
+    this.datos = { ...(modo === "vacio" ? datosVacios() : generarDemo()), actualizadoEn: Date.now() };
+    this.confirmar();
+  }
+
+  enviarReporte(r: NuevoReporte, por: Usuario): Reporte {
+    const n = (this.datos.secuenciaReportes ?? 0) + 1;
+    this.datos.secuenciaReportes = n;
+    const uv = r.ubicacion ? unidadVecinalDe(r.ubicacion) : null;
+    const reporte: Reporte = {
+      ...r,
+      id: `REP-${n}-${Date.now()}`,
+      folio: `R-${String(n).padStart(5, "0")}`,
+      creadoEn: new Date().toISOString(),
+      usuarioId: por.id,
+      direccion: r.direccion.trim(),
+      observaciones: r.observaciones.trim(),
+      unidadVecinal: uv?.uv ?? null,
+      barrio: uv?.barrio ?? null,
+      complementos: [],
+      leidoPorCentral: false,
+    };
+    this.datos.reportes = [reporte, ...(this.datos.reportes ?? [])];
+    this.confirmar();
+    return reporte;
+  }
+
+  complementarReporte(id: string, texto: string, adjuntos: Adjunto[], por: Usuario) {
+    const r = (this.datos.reportes ?? []).find((x) => x.id === id);
+    if (!r) return;
+    if (r.usuarioId !== por.id) throw new Error("Solo quien envió el reporte puede añadirle información");
+    this.datos.reportes = this.datos.reportes.map((x) =>
+      x.id === id ? { ...x, leidoPorCentral: false, complementos: [...x.complementos, { en: new Date().toISOString(), texto: texto.trim(), adjuntos }] } : x,
+    );
+    this.confirmar();
+  }
+
+  marcarReporteLeido(id: string) {
+    this.datos.reportes = (this.datos.reportes ?? []).map((x) => (x.id === id ? { ...x, leidoPorCentral: true } : x));
     this.confirmar();
   }
 }

@@ -127,3 +127,17 @@ Cada sesión agrega una entrada arriba: fecha, sistema, qué se hizo, qué qued�
 3. Georreferenciado: búsqueda de direcciones a través de un servicio en el servidor (cuando se contrate el proveedor).
 4. Análisis: pestaña de tiempos por etapa (distribución) y comparación entre turnos.
 5. Pruebas automáticas de `packages/datos` (semáforo, indicadores, transiciones de estado y turnos).
+
+## 6 · 26-11-2026 (tarde) — Halcones: un solo software Central + Patrulla, reportes con fotos y videos
+
+- La demo parte **vacía**: 23 móviles sin turno, sin procedimientos ni reportes. «Ajustes de la demo» (admin/supervisor) permite vaciar o cargar 90 días de ejemplo.
+- Catálogo completo de las **81 claves** (página «Claves» y lista desplegable en el buscador).
+- **Nuevo procedimiento**: clave → dirección → descripción. Al marcar el punto, el sistema **asigna solo el móvil libre más cercano con patrullero en turno** («Cambiar móvil» para elegir otro). Unidad vecinal y recinto pasan a «ayudas» opcionales.
+- **App del patrullero** con pestañas Inicio · Reportes · Bitácora · Mi turno.
+  - Reportes: hora, n.º de halcón, unidad, barrio y UV (automáticos), dirección, tipo (patrullaje preventivo, procedimiento, punto estático), procedimiento despachado, observaciones con fotos y videos; «Añadir a este reporte» suma información después.
+  - Bitácora: línea de tiempo del turno y procedimientos en los que ha estado.
+  - Mi turno: «Cambiar de móvil o modalidad» cierra la bitácora actual (km final) y abre otra en otro móvil, punto fijo o a pie.
+- Inicio de turno: n.º de halcón; cada ítem del checklist con «Observación» pide descripción y foto/video; fotos generales del móvil.
+- Central: bandeja «Reportes de terreno» con no leídos.
+- Adjuntos de la demo se guardan en IndexedDB del navegador; en producción irán a Supabase Storage con acceso por rol.
+- 26 pruebas pasan; flujo completo verificado en Chrome sin errores.

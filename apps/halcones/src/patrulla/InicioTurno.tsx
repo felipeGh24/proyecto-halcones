@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { centroideUV, leerPuntosInteres, obtenerCliente, UNIDADES_VECINALES, useDatos, type Modalidad } from "@plataforma/datos";
-import { avisar, Boton, Campo, Insignia, Segmentos, useUsuario } from "@plataforma/ui";
+import { avisar, Boton, Campo, Insignia, Segmentos, SelectorAdjuntos, useUsuario } from "@plataforma/ui";
+import type { Adjunto } from "@plataforma/datos";
 
 export const ITEMS_CHECKLIST = ["Luces y baliza", "Sirena", "Radio", "Neumáticos", "Botiquín", "Extintor", "Carrocería", "Documentos del móvil"];
 
@@ -22,6 +23,9 @@ export function InicioTurno() {
   const [combustible, setCombustible] = useState("3/4");
   const [checklist, setChecklist] = useState<Record<string, "ok" | "observacion">>(() => Object.fromEntries(ITEMS_CHECKLIST.map((i) => [i, "ok"])));
   const [lugar, setLugar] = useState("");
+  const [halcon, setHalcon] = useState("");
+  const [detalle, setDetalle] = useState<Record<string, { descripcion: string; adjuntos: Adjunto[] }>>({});
+  const [generales, setGenerales] = useState<Adjunto[]>([]);
   const [error, setError] = useState("");
   const conMovil = modalidad === "movil";
   const listo = nombre.trim().length >= 3 && (conMovil ? movilId && /^\d+$/.test(km) : !!lugar);
@@ -35,10 +39,15 @@ export function InicioTurno() {
           movilId,
           {
             patrullero: nombre.trim(),
+            halcon: halcon.trim(),
             acompanante: acompanante.trim(),
             kmInicial: Number(km),
             combustible,
             observaciones: Object.entries(checklist).filter(([, v]) => v === "observacion").map(([k]) => k),
+            checklistDetalle: Object.entries(checklist)
+              .filter(([, v]) => v === "observacion")
+              .map(([item]) => ({ item, descripcion: detalle[item]?.descripcion.trim() ?? "", adjuntos: detalle[item]?.adjuntos ?? [] })),
+            adjuntosGenerales: generales,
           },
           usuario,
         );
@@ -50,9 +59,10 @@ export function InicioTurno() {
         obtenerCliente().iniciarTurnoPersonal(
           {
             patrullero: nombre.trim(),
+            halcon: halcon.trim(),
             acompanante: acompanante.trim(),
             modalidad,
-            lugar: recinto ? `${recinto.codigo ? `${recinto.codigo} · ` : ""}${recinto.nombre}` : `${modalidad === "a_pie" ? "Patrullaje a pie" : "Punto fijo"} · UV ${String(uv).padStart(2, "0")}`,
+            lugar: recinto ? `${recinto.codigo ? `${recinto.codigo} · ` : ""}${recinto.nombre}` : `UV ${String(uv).padStart(2, "0")}`,
             puntoId: recinto?.id,
             ubicacion,
           },
@@ -132,6 +142,9 @@ export function InicioTurno() {
         <Campo etiqueta="Tu nombre" htmlFor="nombre" ayuda="Así te verá la Central.">
           <input id="nombre" className="ui-entrada" value={nombre} onChange={(e) => setNombre(e.target.value)} autoComplete="name" />
         </Campo>
+        <Campo etiqueta="N.º de halcón (opcional)" htmlFor="halcon" ayuda="Aparece en tus reportes.">
+          <input id="halcon" className="ui-entrada" inputMode="numeric" value={halcon} onChange={(e) => setHalcon(e.target.value.slice(0, 10))} placeholder="Ej.: 12" />
+        </Campo>
         <Campo etiqueta="Acompañante (opcional)" htmlFor="acomp">
           <input id="acomp" className="ui-entrada" value={acompanante} onChange={(e) => setAcompanante(e.target.value)} />
         </Campo>
@@ -152,19 +165,41 @@ export function InicioTurno() {
             <fieldset className="checklist">
               <legend>Checklist del móvil</legend>
               {ITEMS_CHECKLIST.map((i) => (
-                <div key={i} className="checklist__item">
-                  <span>{i}</span>
-                  <Segmentos
-                    etiqueta={i}
-                    valor={checklist[i]}
-                    onCambio={(v) => setChecklist((c) => ({ ...c, [i]: v }))}
-                    opciones={[
-                      { valor: "ok", texto: "OK" },
-                      { valor: "observacion", texto: "Observación" },
-                    ]}
-                  />
+                <div key={i} className="checklist__bloque">
+                  <div className="checklist__item">
+                    <span>{i}</span>
+                    <Segmentos
+                      etiqueta={i}
+                      valor={checklist[i]}
+                      onCambio={(v) => setChecklist((c) => ({ ...c, [i]: v }))}
+                      opciones={[
+                        { valor: "ok", texto: "OK" },
+                        { valor: "observacion", texto: "Observación" },
+                      ]}
+                    />
+                  </div>
+                  {checklist[i] === "observacion" && (
+                    <div className="checklist__obs">
+                      <textarea
+                        className="ui-entrada"
+                        placeholder={`Describe la observación de ${i.toLowerCase()}`}
+                        value={detalle[i]?.descripcion ?? ""}
+                        onChange={(e) => setDetalle((d) => ({ ...d, [i]: { descripcion: e.target.value, adjuntos: d[i]?.adjuntos ?? [] } }))}
+                      />
+                      <SelectorAdjuntos
+                        etiqueta="Foto o video"
+                        adjuntos={detalle[i]?.adjuntos ?? []}
+                        onCambio={(a) => setDetalle((d) => ({ ...d, [i]: { descripcion: d[i]?.descripcion ?? "", adjuntos: a } }))}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
+            </fieldset>
+            <fieldset className="checklist">
+              <legend>Fotos y videos del móvil (opcional)</legend>
+              <p className="pequeno texto-3">Por ejemplo, los cuatro costados y el tablero al salir.</p>
+              <SelectorAdjuntos adjuntos={generales} onCambio={setGenerales} />
             </fieldset>
           </>
         )}

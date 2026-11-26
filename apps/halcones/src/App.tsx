@@ -5,6 +5,9 @@ import { ListaProcedimientos } from "./central/ListaProcedimientos";
 import { Moviles } from "./central/Moviles";
 import { Bitacora } from "./central/Bitacora";
 import { Patrulla } from "./patrulla/Patrulla";
+import { Reportes } from "./central/Reportes";
+import { Claves } from "./central/Claves";
+import { Ajustes } from "./central/Ajustes";
 
 const CENTRAL = ["administrador", "jefatura", "supervisor", "operador"] as const;
 
@@ -38,6 +41,9 @@ export function App() {
         <Route path="/central/procedimientos" element={<RutaProtegida roles={[...CENTRAL]}><ListaProcedimientos /></RutaProtegida>} />
         <Route path="/central/moviles" element={<RutaProtegida roles={[...CENTRAL]}><Moviles /></RutaProtegida>} />
         <Route path="/central/bitacora" element={<RutaProtegida roles={[...CENTRAL]}><Bitacora /></RutaProtegida>} />
+        <Route path="/central/reportes" element={<RutaProtegida roles={[...CENTRAL]}><Reportes /></RutaProtegida>} />
+        <Route path="/central/claves" element={<RutaProtegida roles={[...CENTRAL]}><Claves /></RutaProtegida>} />
+        <Route path="/central/ajustes" element={<RutaProtegida roles={["administrador", "supervisor"]}><Ajustes /></RutaProtegida>} />
         <Route path="/patrulla/*" element={<RutaProtegida roles={["patrullero", "administrador"]}><Patrulla /></RutaProtegida>} />
         <Route path="*" element={<Inicio />} />
       </Routes>

@@ -63,6 +63,8 @@ export type EstadoMovil = "sin_turno" | "disponible" | "asignado" | "en_procedim
 /** Turno abierto por el patrullero desde su app al salir en un móvil. */
 export interface TurnoMovil {
   patrullero: string;
+  /** Número o código de halcón del patrullero (opcional). */
+  halcon?: string;
   acompanante: string;
   usuarioId: string;
   iniciadoEn: string;
@@ -70,6 +72,49 @@ export interface TurnoMovil {
   combustible: string;
   /** Ítems del checklist con observación (vacío = todo OK). */
   observaciones: string[];
+  /** Detalle del checklist: descripción y fotos o videos por ítem con observación, más los generales. */
+  checklistDetalle?: { item: string; descripcion: string; adjuntos: Adjunto[] }[];
+  adjuntosGenerales?: Adjunto[];
+}
+
+/** Foto o video. El archivo vive en el almacenamiento (en la demo, en el navegador); aquí solo su referencia. */
+export interface Adjunto {
+  id: string;
+  nombre: string;
+  tipo: "imagen" | "video";
+  bytes: number;
+}
+
+export type TipoReporte = "patrullaje_preventivo" | "procedimiento" | "punto_estatico";
+
+export interface EntradaReporte {
+  en: string;
+  texto: string;
+  adjuntos: Adjunto[];
+}
+
+/** Reporte que el patrullero envía a la Central. */
+export interface Reporte {
+  id: string;
+  folio: string;
+  creadoEn: string;
+  usuarioId: string;
+  patrullero: string;
+  /** Número o código de halcón del patrullero. */
+  halcon: string;
+  /** Unidad (móvil o puesto) desde donde se envía. */
+  unidad: string;
+  tipo: TipoReporte;
+  direccion: string;
+  ubicacion: Punto | null;
+  unidadVecinal: number | null;
+  barrio: string | null;
+  procedimientoId: string | null;
+  observaciones: string;
+  adjuntos: Adjunto[];
+  /** Lo que se añade después al mismo reporte. */
+  complementos: EntradaReporte[];
+  leidoPorCentral: boolean;
 }
 
 export interface Movil {
@@ -112,6 +157,7 @@ export interface TurnoPersonal {
   id: string;
   usuarioId: string;
   patrullero: string;
+  halcon?: string;
   acompanante: string;
   modalidad: "punto_fijo" | "a_pie";
   /** Recinto o sector, por ejemplo «GAMA 1 · Municipalidad» o «UV 12 · Barrio Sur». */

@@ -9,7 +9,8 @@ export function BuscadorClave({ valor, onElegir, error }: { valor: number | null
   const [texto, setTexto] = useState(elegida ? `${elegida.numero} · ${elegida.nombre}` : "");
   const [abierto, setAbierto] = useState(false);
   const [activo, setActivo] = useState(0);
-  const opciones = buscarClaves(elegida && texto === `${elegida.numero} · ${elegida.nombre}` ? "" : texto, 8);
+  // Sin texto se listan las 81 claves en orden; al escribir se filtra por número o nombre.
+  const opciones = buscarClaves(elegida && texto === `${elegida.numero} · ${elegida.nombre}` ? "" : texto, 81);
 
   function elegir(n: number) {
     const c = obtenerClave(n)!;
@@ -32,7 +33,7 @@ export function BuscadorClave({ valor, onElegir, error }: { valor: number | null
           aria-controls={`${id}-lista`}
           aria-autocomplete="list"
           autoComplete="off"
-          placeholder="Número o nombre, ej.: 67 o robo"
+          placeholder="Escribe número o nombre (ej.: 67 o robo) o elige de la lista"
           value={texto}
           onChange={(e) => {
             setTexto(e.target.value);

@@ -8,7 +8,7 @@ import { ITEMS_CHECKLIST } from "./InicioTurno";
  * Cierre de turno: con móvil pide kilometraje final, combustible y novedades del checklist; sin móvil, solo novedades.
  * El turno queda en el historial y la Central lo ve en la bitácora.
  */
-export function CierreTurno({ movil, personal, bloqueado, onCerrar }: { movil?: Movil; personal?: TurnoPersonal; bloqueado: boolean; onCerrar: () => void }) {
+export function CierreTurno({ movil, personal, bloqueado, modo = "salir", onCerrar }: { movil?: Movil; personal?: TurnoPersonal; bloqueado: boolean; modo?: "salir" | "cambiar"; onCerrar: () => void }) {
   const usuario = useUsuario();
   const { salir } = useSesion();
   const navegar = useNavigate();
@@ -26,6 +26,12 @@ export function CierreTurno({ movil, personal, bloqueado, onCerrar }: { movil?: 
       const cierre = { kmFinal: movil ? Number(km) : null, combustibleFinal: movil ? combustible : null, novedadesChecklist: novedades, observaciones };
       if (movil) obtenerCliente().cerrarTurno(movil.id, usuario, cierre);
       else if (personal) obtenerCliente().cerrarTurnoPersonal(personal.id, usuario, cierre);
+      if (modo === "cambiar") {
+        // La bitácora anterior queda cerrada; al no haber turno abierto, la app muestra el inicio de turno.
+        avisar("Bitácora cerrada: elige el nuevo móvil o modalidad");
+        onCerrar();
+        return;
+      }
       avisar("Turno cerrado y registrado");
       salir();
       navegar("/ingreso", { replace: true });
@@ -36,14 +42,22 @@ export function CierreTurno({ movil, personal, bloqueado, onCerrar }: { movil?: 
 
   return (
     <Modal
-      titulo="Cerrar turno"
-      subtitulo={bloqueado ? "Tienes un procedimiento activo: finalízalo o pide a la Central que lo reasigne." : movil ? `${movil.nombre} quedará sin turno y la Central no podrá despacharle.` : "Tu turno quedará registrado en la bitácora."}
+      titulo={modo === "cambiar" ? "Cambiar de móvil o modalidad" : "Cerrar turno"}
+      subtitulo={
+        bloqueado
+          ? "Tienes un procedimiento activo: finalízalo o pide a la Central que lo reasigne."
+          : modo === "cambiar"
+            ? `Primero se cierra la bitácora de ${movil ? movil.nombre : "tu puesto actual"}; después eliges el nuevo móvil, punto fijo o a pie.`
+            : movil
+              ? `${movil.nombre} quedará sin turno y la Central no podrá despacharle.`
+              : "Tu turno quedará registrado en la bitácora."
+      }
       onCerrar={onCerrar}
       pie={
         <>
           <Boton onClick={onCerrar}>Volver</Boton>
           <Boton variante="primario" disabled={bloqueado || !kmValido} onClick={cerrar}>
-            Cerrar turno y salir
+            {modo === "cambiar" ? "Cerrar bitácora y continuar" : "Cerrar turno y salir"}
           </Boton>
         </>
       }
