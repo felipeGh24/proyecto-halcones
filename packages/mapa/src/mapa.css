@@ -19,3 +19,4 @@
 .mapa-escala { display: grid; gap: 4px; font-size: 11px; color: var(--texto-2); }
 .mapa-escala__barra { height: 10px; border-radius: 5px; background: linear-gradient(90deg, rgb(239, 244, 255), rgb(23, 37, 84)); }
 .mapa-escala__extremos { display: flex; justify-content: space-between; }
+.mapa-leyenda i.cuadro { border-radius: 3px; border: 1px solid #98A2B3; box-shadow: none; }

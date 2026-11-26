@@ -68,6 +68,17 @@ export interface MarcaMapa {
   titulo?: string;
 }
 
+/** Colores claros por barrio: ayudan a ubicarse sin competir con el semáforo de los procedimientos. */
+export const COLORES_BARRIO: Record<string, string> = {
+  "Barrio Central": "#FDE2E1",
+  "Barrio Vivaceta-Barón": "#DCFCE7",
+  "Barrio Balneario": "#E0F2FE",
+  "Barrio El Cortijo": "#FEF9C3",
+  "Barrio Vespucio Oriente": "#EDE9FE",
+  "Barrio Sur": "#FFEDD5",
+  "Barrio Juanita Aguirre": "#CCFBF1",
+};
+
 /** Escala secuencial azul (claro → oscuro) para valores 0–1. */
 export function colorSecuencial(t: number) {
   const x = Math.max(0, Math.min(1, t));
@@ -97,6 +108,8 @@ interface PropsMapa {
   etiquetas?: { barrios?: boolean; uvs?: boolean };
   marcas?: MarcaMapa[];
   onMarca?: (id: string) => void;
+  /** Pinta cada barrio con su color claro (por defecto sí, salvo que haya mapa coroplético). */
+  colorBarrios?: boolean;
 }
 
 function fcProcedimientos(procs: Procedimiento[], seleccionId: string | null) {
@@ -186,6 +199,7 @@ export function Mapa({
   etiquetas,
   marcas = [],
   onMarca,
+  colorBarrios = true,
 }: PropsMapa) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapa = useRef<MapaGL | null>(null);
@@ -334,8 +348,16 @@ export function Mapa({
     const m = mapa.current;
     if (!m || !listo) return;
     if (!coropleta) {
-      m.setPaintProperty("uv-relleno", "fill-color", "#FFFFFF");
-      m.setPaintProperty("uv-relleno", "fill-opacity", TIENE_MAPA_BASE ? 0.05 : 1);
+      if (colorBarrios) {
+        const expr: unknown[] = ["match", ["get", "barrio"]];
+        for (const [b, c] of Object.entries(COLORES_BARRIO)) expr.push(b, c);
+        expr.push("#FFFFFF");
+        m.setPaintProperty("uv-relleno", "fill-color", expr as never);
+        m.setPaintProperty("uv-relleno", "fill-opacity", TIENE_MAPA_BASE ? 0.45 : 1);
+      } else {
+        m.setPaintProperty("uv-relleno", "fill-color", "#FFFFFF");
+        m.setPaintProperty("uv-relleno", "fill-opacity", TIENE_MAPA_BASE ? 0.05 : 1);
+      }
       return;
     }
     const expr: unknown[] = ["match", ["get", "uv"]];
@@ -343,7 +365,7 @@ export function Mapa({
     expr.push("#FFFFFF");
     m.setPaintProperty("uv-relleno", "fill-color", expr as never);
     m.setPaintProperty("uv-relleno", "fill-opacity", TIENE_MAPA_BASE ? 0.7 : 1);
-  }, [listo, coropleta]);
+  }, [listo, coropleta, colorBarrios]);
 
   // Nombres de barrios y números de UV (marcadores HTML: no dependen de fuentes del proveedor de mapas).
   const conBarrios = !!etiquetas?.barrios;

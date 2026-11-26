@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { analizarPatrones, esActivo, normalizar, obtenerClave, useDatos, type Punto } from "@plataforma/datos";
-import { CAPAS_INICIALES, EscalaCoropleta, LeyendaMapa, Mapa, type Capas, type MarcaMapa, type Seleccion } from "@plataforma/mapa";
+import { CAPAS_INICIALES, EscalaCoropleta, LeyendaBarrios, LeyendaMapa, Mapa, type Capas, type MarcaMapa, type Seleccion } from "@plataforma/mapa";
 import { Icono, Insignia, Semaforo } from "@plataforma/ui";
 import { MarcoGeo } from "./MarcoGeo";
 import { PanelDetalle } from "./PanelDetalle";
@@ -13,8 +13,9 @@ const NOMBRES_CAPAS: { clave: keyof Capas; texto: string }[] = [
   { clave: "calor", texto: "Mapa de calor (últimos 30 días)" },
 ];
 
-type Extras = { barrios: boolean; uvs: boolean; conflicto: boolean; sugerencias: boolean };
+type Extras = { colores: boolean; barrios: boolean; uvs: boolean; conflicto: boolean; sugerencias: boolean };
 const NOMBRES_EXTRAS: { clave: keyof Extras; texto: string }[] = [
+  { clave: "colores", texto: "Colores por barrio" },
   { clave: "barrios", texto: "Nombres de barrios" },
   { clave: "uvs", texto: "Números de UV" },
   { clave: "conflicto", texto: "Índice de conflicto por UV" },
@@ -24,7 +25,7 @@ const NOMBRES_EXTRAS: { clave: keyof Extras; texto: string }[] = [
 export function EnVivo() {
   const { procedimientos, moviles } = useDatos();
   const [capas, setCapas] = useState<Capas>(CAPAS_INICIALES);
-  const [extras, setExtras] = useState<Extras>({ barrios: true, uvs: false, conflicto: false, sugerencias: false });
+  const [extras, setExtras] = useState<Extras>({ colores: true, barrios: true, uvs: false, conflicto: false, sugerencias: false });
   const patrones = useMemo(() => (extras.conflicto || extras.sugerencias ? analizarPatrones(procedimientos) : null), [procedimientos, extras.conflicto, extras.sugerencias]);
   const coropleta = useMemo(() => {
     if (!extras.conflicto || !patrones) return null;
@@ -102,6 +103,7 @@ export function EnVivo() {
             ))}
           </fieldset>
           {extras.conflicto && <EscalaCoropleta titulo="Índice de conflicto (12 semanas)" min="menor" max="mayor" />}
+          {extras.colores && !extras.conflicto && <LeyendaBarrios />}
           <LeyendaMapa />
         </aside>
 
@@ -117,6 +119,7 @@ export function EnVivo() {
             coropleta={coropleta}
             etiquetas={{ barrios: extras.barrios, uvs: extras.uvs }}
             marcas={marcas}
+            colorBarrios={extras.colores}
           />
         </section>
 

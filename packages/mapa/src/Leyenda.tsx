@@ -1,4 +1,5 @@
 import { SEMAFOROS } from "@plataforma/datos";
+import { COLORES_BARRIO } from "./Mapa";
 
 /** Leyenda del mapa: el color siempre va con su texto. */
 export function LeyendaMapa() {
@@ -38,6 +39,21 @@ export function EscalaCoropleta({ titulo, min, max }: { titulo: string; min: str
         <span>{min}</span>
         <span>{max}</span>
       </span>
+    </div>
+  );
+}
+
+/** Leyenda de los colores de barrio. */
+export function LeyendaBarrios() {
+  return (
+    <div className="mapa-leyenda" aria-label="Barrios">
+      <strong>Barrios</strong>
+      {Object.entries(COLORES_BARRIO).map(([b, c]) => (
+        <span key={b}>
+          <i className="cuadro" style={{ background: c }} />
+          {b.replace(/^Barrio /, "")}
+        </span>
+      ))}
     </div>
   );
 }

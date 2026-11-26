@@ -82,7 +82,7 @@ export function Tablero() {
         </section>
 
         <section className="tablero__mapa ui-tarjeta" aria-label="Mapa operativo">
-          <Mapa procedimientos={procedimientos} moviles={moviles} seleccion={seleccion} onSeleccionar={setSeleccion} enfocar={procSel?.ubicacion ?? movilSel?.posicion ?? null} />
+          <Mapa procedimientos={procedimientos} moviles={moviles} seleccion={seleccion} onSeleccionar={setSeleccion} enfocar={procSel?.ubicacion ?? movilSel?.posicion ?? null} etiquetas={{ barrios: true }} />
         </section>
 
         <section className="tablero__detalle ui-tarjeta" aria-label="Detalle">
