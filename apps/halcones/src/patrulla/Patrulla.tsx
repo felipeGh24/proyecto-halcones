@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { ESTADOS, SIGUIENTE, esActivo, hace, infoDeClave, obtenerClave, obtenerCliente, useDatos, type EstadoProcedimiento, type Punto } from "@plataforma/datos";
-import { avisar, Boton, Icono, Insignia, Modal, Semaforo, useSesion, useUsuario } from "@plataforma/ui";
+import { avisar, Boton, Icono, Insignia, Modal, Semaforo, useUsuario } from "@plataforma/ui";
+import { CierreTurno } from "./CierreTurno";
 import { InicioTurno } from "./InicioTurno";
 
 const TEXTO_BOTON: Partial<Record<EstadoProcedimiento, string>> = {
@@ -25,20 +25,20 @@ function posicionActual(): Promise<Punto | undefined> {
 
 export function Patrulla() {
   const usuario = useUsuario();
-  const { salir } = useSesion();
-  const navegar = useNavigate();
-  const { procedimientos, moviles } = useDatos();
+  const { procedimientos, moviles, personal } = useDatos();
   const [finalizando, setFinalizando] = useState(false);
   const [apoyo, setApoyo] = useState(false);
   const [cerrando, setCerrando] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
-  // El turno vive en los datos compartidos: es el móvil cuyo turno abrió este usuario.
+  // El turno vive en los datos compartidos: el móvil o el puesto (punto fijo, a pie) que abrió este usuario.
   const movil = moviles.find((m) => m.turno?.usuarioId === usuario.id);
-  if (!movil?.turno) return <InicioTurno />;
-  const turno = movil.turno;
+  const puesto = personal.find((p) => p.usuarioId === usuario.id);
+  const turno = movil?.turno ?? puesto;
+  if (!turno) return <InicioTurno />;
+  const titulo = movil ? movil.nombre : puesto!.modalidad === "punto_fijo" ? "Punto fijo" : "Patrullaje a pie";
 
-  const asignado = procedimientos.find((p) => p.movilId === movil.id && esActivo(p.estado) && p.estado !== "recibido");
+  const asignado = movil ? procedimientos.find((p) => p.movilId === movil.id && esActivo(p.estado) && p.estado !== "recibido") : undefined;
   const sig = asignado ? SIGUIENTE[asignado.estado] : undefined;
 
   async function avanzar(estado: EstadoProcedimiento, resultado?: string) {
@@ -54,7 +54,7 @@ export function Patrulla() {
     <div className="patrulla">
       <header className="patrulla__cabeza">
         <div>
-          <strong>{movil.nombre}</strong>
+          <strong>{titulo}</strong>
           <div className="pequeno texto-3">
             {turno.patrullero}
             {turno.acompanante ? ` y ${turno.acompanante}` : ""} · turno desde {new Date(turno.iniciadoEn).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" })}
@@ -101,8 +101,12 @@ export function Patrulla() {
             <span className="ui-vacio__icono">
               <Icono nombre="check" />
             </span>
-            <h1>Disponible</h1>
-            <p className="texto-2">La Central te ve como libre en {movil.nombre}. Cuando te despache, el procedimiento aparecerá aquí al instante.</p>
+            <h1>{movil ? "Disponible" : "En servicio"}</h1>
+            <p className="texto-2">
+              {movil
+                ? `La Central te ve como libre en ${movil.nombre}. Cuando te despache, el procedimiento aparecerá aquí al instante.`
+                : `La Central te ve en ${puesto!.lugar}. Si necesitas otro móvil, usa «Solicitar apoyo».`}
+            </p>
           </section>
         )}
       </main>
@@ -136,8 +140,8 @@ export function Patrulla() {
               <Boton
                 variante="peligro"
                 onClick={async () => {
-                  const pos = (await posicionActual()) ?? asignado?.ubicacion ?? movil.posicion;
-                  obtenerCliente().pedirApoyo(movil.id, usuario, pos);
+                  const pos = (await posicionActual()) ?? asignado?.ubicacion ?? movil?.posicion ?? puesto!.ubicacion;
+                  obtenerCliente().pedirApoyo(movil?.id ?? "", usuario, pos);
                   setApoyo(false);
                   avisar("Apoyo solicitado a la Central");
                 }}
@@ -150,31 +154,7 @@ export function Patrulla() {
           <p className="texto-2">Úsalo cuando necesites otro móvil en tu ubicación.</p>
         </Modal>
       )}
-      {cerrando && (
-        <Modal
-          titulo="Cerrar turno"
-          subtitulo={asignado ? "Tienes un procedimiento activo: finalízalo o pide a la Central que lo reasigne." : `${movil.nombre} quedará sin turno y la Central no podrá despacharle. También se cerrará tu sesión.`}
-          onCerrar={() => setCerrando(false)}
-          pie={
-            <>
-              <Boton onClick={() => setCerrando(false)}>Volver</Boton>
-              <Boton
-                variante="primario"
-                disabled={!!asignado}
-                onClick={() => {
-                  obtenerCliente().cerrarTurno(movil.id, usuario);
-                  salir();
-                  navegar("/ingreso", { replace: true });
-                }}
-              >
-                Cerrar turno y salir
-              </Boton>
-            </>
-          }
-        >
-          <p className="texto-2">El checklist de cierre y el kilometraje final se registrarán aquí cuando el turno se guarde en la base de datos.</p>
-        </Modal>
-      )}
+      {cerrando && <CierreTurno movil={movil} personal={puesto} bloqueado={!!asignado} onCerrar={() => setCerrando(false)} />}
     </div>
   );
 }

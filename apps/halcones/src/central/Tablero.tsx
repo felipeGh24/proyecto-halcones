@@ -11,7 +11,7 @@ import { NuevoProcedimiento } from "./NuevoProcedimiento";
 const DOCE_HORAS = 12 * 3600 * 1000;
 
 export function Tablero() {
-  const { procedimientos, moviles } = useDatos();
+  const { procedimientos, moviles, personal } = useDatos();
   const usuario = useUsuario();
   const [seleccion, setSeleccion] = useState<Seleccion>(null);
   const [creando, setCreando] = useState(false);
@@ -72,7 +72,7 @@ export function Tablero() {
         <div className="tablero__indicadores ui-tarjeta">
           <Indicador etiqueta="Procedimientos activos" valor={activos.length} detalle={`${activos.filter((p) => p.estado === "recibido").length} sin despachar`} icono="lista" />
           <Indicador etiqueta="Rojos sin despachar" valor={urgentesSinDespacho} alerta={urgentesSinDespacho > 0} detalle={urgentesSinDespacho ? "Requieren despacho inmediato" : "Todo despachado"} icono="alerta" />
-          <Indicador etiqueta="Móviles libres" valor={`${disponibles} / ${enTurno}`} detalle="con patrullero en turno" icono="auto" alerta={enTurno > 0 && disponibles === 0} />
+          <Indicador etiqueta="Móviles libres" valor={`${disponibles} / ${enTurno}`} detalle={`con patrullero en turno · ${personal.length} a pie o en punto fijo`} icono="auto" alerta={enTurno > 0 && disponibles === 0} />
           <Indicador etiqueta="Despacho (mediana, 12 h)" valor={duracion(turno.despachoMediana)} detalle="de recibido a asignado" icono="reloj" />
           <Indicador etiqueta="Respuesta (mediana, 12 h)" valor={duracion(turno.respuestaMediana)} detalle="de recibido a en el lugar" icono="navegar" />
         </div>
@@ -82,7 +82,7 @@ export function Tablero() {
         </section>
 
         <section className="tablero__mapa ui-tarjeta" aria-label="Mapa operativo">
-          <Mapa procedimientos={procedimientos} moviles={moviles} seleccion={seleccion} onSeleccionar={setSeleccion} enfocar={procSel?.ubicacion ?? movilSel?.posicion ?? null} etiquetas={{ barrios: true }} />
+          <Mapa procedimientos={procedimientos} moviles={moviles} seleccion={seleccion} onSeleccionar={setSeleccion} enfocar={procSel?.ubicacion ?? movilSel?.posicion ?? null} etiquetas={{ barrios: true }} marcas={personal.map((p) => ({ id: p.id, punto: p.ubicacion, tipo: "personal" as const, texto: p.modalidad === "punto_fijo" ? "PF" : "A pie", titulo: `${p.patrullero} · ${p.lugar}` }))} />
         </section>
 
         <section className="tablero__detalle ui-tarjeta" aria-label="Detalle">

@@ -59,14 +59,35 @@ export function unidadVecinalDe(p: Punto): PropiedadesUV | null {
   return null;
 }
 
+const cacheCentro = new Map<number, Punto>();
+
+/** Punto interior representativo de la UV: el promedio de sus vértices si cae dentro; si no, el punto interior más cercano a él. */
 export function centroideUV(uv: number): Punto | null {
+  if (cacheCentro.has(uv)) return cacheCentro.get(uv)!;
   const f = UNIDADES_VECINALES.features.find((x) => x.properties.uv === uv);
   if (!f) return null;
   const anillo = f.geometry.coordinates[0];
   let lat = 0, lng = 0;
   for (const [x, y] of anillo) { lng += x; lat += y; }
   const centro = { lat: lat / anillo.length, lng: lng / anillo.length };
-  return unidadVecinalDe(centro)?.uv === uv ? centro : { lat: anillo[0][1], lng: anillo[0][0] };
+  let mejor: Punto | null = unidadVecinalDe(centro)?.uv === uv ? centro : null;
+  if (!mejor) {
+    const xs = anillo.map((c) => c[0]);
+    const ys = anillo.map((c) => c[1]);
+    const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+    let dMin = Infinity;
+    const pasos = 40;
+    for (let i = 1; i < pasos; i++)
+      for (let j = 1; j < pasos; j++) {
+        const p = { lng: x0 + ((x1 - x0) * i) / pasos, lat: y0 + ((y1 - y0) * j) / pasos };
+        if (unidadVecinalDe(p)?.uv !== uv) continue;
+        const d = (p.lng - centro.lng) ** 2 + (p.lat - centro.lat) ** 2;
+        if (d < dMin) { dMin = d; mejor = p; }
+      }
+  }
+  const resultado = mejor ?? { lat: anillo[0][1], lng: anillo[0][0] };
+  cacheCentro.set(uv, resultado);
+  return resultado;
 }
 
 /** Distancia aproximada en metros (haversine). */

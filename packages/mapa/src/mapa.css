@@ -32,3 +32,4 @@
 .mapa-poi--seguridad { background: #1D4ED8; }
 .mapa-poi--otro { background: #475467; }
 .maplibregl-ctrl-attrib { font-size: 10px; }
+.mapa-marca--personal { background: #fff; color: #0F766E; border-color: #0F766E; font-size: 10.5px; padding: 2px 7px; }

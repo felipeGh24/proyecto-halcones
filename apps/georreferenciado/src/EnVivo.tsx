@@ -32,7 +32,7 @@ const NOMBRES_EXTRAS: { clave: keyof Extras; texto: string }[] = [
 ];
 
 export function EnVivo() {
-  const { procedimientos, moviles } = useDatos();
+  const { procedimientos, moviles, personal } = useDatos();
   const [capas, setCapas] = useState<Capas>(CAPAS_INICIALES);
   const [puntos, setPuntos] = useState<PuntoInteres[]>(() => leerPuntosInteres());
   const [verPuntos, setVerPuntos] = useState(true);
@@ -165,7 +165,10 @@ export function EnVivo() {
             enfocar={enfoque}
             coropleta={coropleta}
             etiquetas={{ barrios: extras.barrios, uvs: extras.uvs }}
-            marcas={marcas}
+            marcas={[
+              ...(capas.moviles ? personal.map((p) => ({ id: p.id, punto: p.ubicacion, tipo: "personal" as const, texto: p.modalidad === "punto_fijo" ? "PF" : "A pie", titulo: `${p.patrullero} · ${p.lugar}` })) : []),
+              ...marcas,
+            ]}
             colorBarrios={extras.colores}
             puntosInteres={verPuntos ? puntos : []}
             onClicMapa={

@@ -51,6 +51,12 @@ npm run build
 npm run demo                  # http://localhost:4173/halcones/ (y /georreferenciado/, /analisis/)
 ```
 
+### Pruebas
+
+```bash
+npm test          # Vitest; también funciona con: bun test packages/datos/pruebas
+```
+
 ### Modo demostración
 
 Mientras no se conecte la base de datos, todo funciona con **datos ficticios guardados en el navegador** y la pantalla de ingreso lo dice claramente. Cuentas de ejemplo (contraseña `demo2026`):

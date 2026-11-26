@@ -25,6 +25,10 @@ export function LeyendaMapa() {
         <i className="anillo" style={{ borderColor: "#98A2B3" }} />
         Fuera de servicio o sin señal
       </span>
+      <span>
+        <i className="cuadro" style={{ background: "#fff", borderColor: "#0F766E", borderWidth: 2 }} />
+        Punto fijo o a pie
+      </span>
     </div>
   );
 }

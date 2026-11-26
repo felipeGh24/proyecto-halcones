@@ -104,3 +104,44 @@ export interface Sesion {
 }
 
 export type Turno = "manana" | "tarde" | "noche";
+
+export type Modalidad = "movil" | "punto_fijo" | "a_pie";
+
+/** Personal en terreno sin móvil: punto fijo o patrullaje a pie. */
+export interface TurnoPersonal {
+  id: string;
+  usuarioId: string;
+  patrullero: string;
+  acompanante: string;
+  modalidad: "punto_fijo" | "a_pie";
+  /** Recinto o sector, por ejemplo «GAMA 1 · Municipalidad» o «UV 12 · Barrio Sur». */
+  lugar: string;
+  puntoId?: string;
+  ubicacion: Punto;
+  iniciadoEn: string;
+}
+
+/** Turno ya cerrado, para la bitácora y el análisis de dotación. */
+export interface RegistroTurno {
+  id: string;
+  usuarioId: string;
+  patrullero: string;
+  acompanante: string;
+  modalidad: Modalidad;
+  unidad: string;
+  iniciadoEn: string;
+  cerradoEn: string;
+  kmInicial: number | null;
+  kmFinal: number | null;
+  combustibleFinal: string | null;
+  /** Ítems del checklist con novedad al cierre. */
+  novedadesChecklist: string[];
+  observaciones: string;
+}
+
+export interface CierreTurno {
+  kmFinal?: number | null;
+  combustibleFinal?: string | null;
+  novedadesChecklist?: string[];
+  observaciones?: string;
+}

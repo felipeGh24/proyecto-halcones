@@ -10,7 +10,7 @@ const GRUPOS: { titulo: string; estados: EstadoMovil[]; ayuda: string }[] = [
 ];
 
 export function Moviles() {
-  const { moviles, procedimientos } = useDatos();
+  const { moviles, procedimientos, personal } = useDatos();
   const usuario = useUsuario();
   const enTurno = moviles.filter((m) => m.turno).length;
 
@@ -23,8 +23,17 @@ export function Moviles() {
     }
   }
 
+  function cerrarPersonal(id: string, nombre: string) {
+    try {
+      obtenerCliente().cerrarTurnoPersonal(id, usuario, { observaciones: "Cerrado por la Central" });
+      avisar(`Turno de ${nombre} cerrado`);
+    } catch (e) {
+      avisar(e instanceof Error ? e.message : "No se pudo cerrar el turno");
+    }
+  }
+
   return (
-    <MarcoCentral titulo="Móviles y patrulleros" subtitulo={`${enTurno} de ${moviles.length} móviles con patrullero en turno`}>
+    <MarcoCentral titulo="Móviles y patrulleros" subtitulo={`${enTurno} de ${moviles.length} móviles con patrullero en turno · ${personal.length} en punto fijo o a pie`}>
       <div className="pagina">
         <div className="resumen-flota">
           {GRUPOS.map((g) => (
@@ -34,6 +43,38 @@ export function Moviles() {
             </div>
           ))}
         </div>
+        {personal.length > 0 && (
+          <section className="grupo-moviles">
+            <header>
+              <h2>Punto fijo y a pie</h2>
+              <span className="pequeno texto-3">Personal en terreno sin móvil.</span>
+            </header>
+            <div className="grilla-moviles">
+              {personal.map((p) => (
+                <article key={p.id} className="ui-tarjeta tarjeta-movil">
+                  <header>
+                    <h3>{p.modalidad === "punto_fijo" ? "Punto fijo" : "A pie"}</h3>
+                    <Insignia tono="ok" punto>
+                      En servicio
+                    </Insignia>
+                  </header>
+                  <p>
+                    <strong>{p.patrullero}</strong>
+                    {p.acompanante && <span className="texto-2"> y {p.acompanante}</span>}
+                  </p>
+                  <p className="pequeno texto-3">
+                    {p.lugar} · desde {hora(p.iniciadoEn)}
+                  </p>
+                  {puede(usuario.rol, "cancelar_procedimiento") && (
+                    <Boton variante="fantasma" onClick={() => cerrarPersonal(p.id, p.patrullero)}>
+                      Cerrar turno
+                    </Boton>
+                  )}
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
         {GRUPOS.map((g) => {
           const lista = moviles.filter((m) => g.estados.includes(m.estado)).sort((a, b) => a.nombre.localeCompare(b.nombre));
           if (!lista.length) return null;

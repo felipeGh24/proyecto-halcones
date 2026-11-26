@@ -1,6 +1,6 @@
 import { CLAVES, obtenerClave } from "../claves";
 import { centroideUV, UNIDADES_VECINALES, unidadVecinalDe } from "../geo";
-import type { EstadoProcedimiento, EventoProcedimiento, Movil, Procedimiento, Punto, TipoMovil } from "../tipos";
+import type { EstadoProcedimiento, EventoProcedimiento, Movil, Procedimiento, Punto, RegistroTurno, TipoMovil, TurnoPersonal } from "../tipos";
 
 /**
  * Datos de ejemplo para el modo demostración. Todo es ficticio: no hay personas ni hechos reales.
@@ -107,6 +107,8 @@ function tiempos(azar: Azar, prioridad: string) {
 export interface DatosDemo {
   procedimientos: Procedimiento[];
   moviles: Movil[];
+  personal: TurnoPersonal[];
+  historialTurnos: RegistroTurno[];
   secuencia: number;
 }
 
@@ -215,7 +217,13 @@ export function generarDemo(ahora = Date.now(), dias = 90, semilla = 2026): Dato
     });
   }
 
-  return { procedimientos, moviles, secuencia };
+  // Personal sin móvil (ficticio): dos puntos fijos y una pareja a pie.
+  const personal: TurnoPersonal[] = [
+    { id: "pers-1", usuarioId: "u-demo-p1", patrullero: "Patrullero 41", acompanante: "", modalidad: "punto_fijo", lugar: "Punto fijo de ejemplo · UV 41", ubicacion: puntoEnUV(azar, 41), iniciadoEn: inicioTurno },
+    { id: "pers-2", usuarioId: "u-demo-p2", patrullero: "Patrullero 42", acompanante: "", modalidad: "punto_fijo", lugar: "Punto fijo de ejemplo · UV 02", ubicacion: puntoEnUV(azar, 2), iniciadoEn: inicioTurno },
+    { id: "pers-3", usuarioId: "u-demo-p3", patrullero: "Patrullero 43", acompanante: "Patrullero 44", modalidad: "a_pie", lugar: "Patrullaje a pie · UV 30", ubicacion: puntoEnUV(azar, 30), iniciadoEn: inicioTurno },
+  ];
+  return { procedimientos, moviles, personal, historialTurnos: [], secuencia };
 
   function historico(azar: Azar, n: number, t0: number, foco?: { uv: number; claves: number[]; radio: number }): Procedimiento {
     const clave = foco ? obtenerClave(foco.claves[Math.floor(azar() * foco.claves.length)])! : elegirPonderado(azar, CLAVES_DEMO, PESOS_DEMO);

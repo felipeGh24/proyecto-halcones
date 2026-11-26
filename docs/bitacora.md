@@ -4,6 +4,29 @@ Cada sesión agrega una entrada arriba: fecha, sistema, qué se hizo, qué qued�
 
 ---
 
+## 2026-11-26 (5) · Punto fijo y a pie, cierre de turno y pruebas automáticas
+
+**Hecho**
+
+- Inicio de turno con tres modalidades:
+  - En móvil: igual que antes.
+  - Punto fijo: en un recinto (GAMA ya ubicado) o en una unidad vecinal.
+  - A pie: en un sector.
+- El personal sin móvil aparece en la Central (Móviles y patrulleros), en el tablero, en el mapa en vivo (marca «PF» o «A pie») y en el indicador de móviles libres.
+- Cierre de turno desde el celular:
+  - Kilometraje final validado contra el inicial, con el recorrido calculado.
+  - Combustible, novedades del checklist y observaciones para el turno siguiente.
+  - No deja cerrar con un procedimiento activo.
+- El supervisor puede cerrar turnos desde la Central.
+- Bitácora de la Central: tabla de turnos cerrados con kilómetros recorridos y novedades.
+- Pruebas automáticas (24) en `packages/datos/pruebas`: catálogo y semáforo, territorio, indicadores, motor de patrones, datos de demostración, planilla de puntos y reglas de turnos y despacho. Corren con `npm test` (Vitest) o `bun test`.
+- Una prueba encontró un error real, ya corregido: el centro calculado de la UV 45 caía fuera de su polígono (afectaba a etiquetas y a los turnos «a pie»).
+
+**Pendiente**
+
+- Despachar a personal a pie (hoy solo se despacha a móviles).
+- Las sesiones automáticas del 26-11 terminaron en menos de un minuto sin cambios: revisar su acceso al repositorio.
+
 ## 2026-11-26 (4) · Recintos municipales (GAMA) y asistenciales de noche
 
 **Hecho**

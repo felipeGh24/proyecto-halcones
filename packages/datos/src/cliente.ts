@@ -3,7 +3,7 @@ import { obtenerClave } from "./claves";
 import { generarDemo, folio, type DatosDemo } from "./demo/semilla";
 import { esActivo, SIGUIENTE } from "./estados";
 import { distanciaMetros, unidadVecinalDe } from "./geo";
-import type { EstadoMovil, EstadoProcedimiento, Movil, Procedimiento, Punto, TurnoMovil, Usuario } from "./tipos";
+import type { CierreTurno, EstadoMovil, EstadoProcedimiento, Movil, Procedimiento, Punto, RegistroTurno, TurnoMovil, TurnoPersonal, Usuario } from "./tipos";
 
 /**
  * Cliente de datos de la plataforma.
@@ -22,6 +22,8 @@ export interface NuevoProcedimiento {
 export interface Instantanea {
   procedimientos: Procedimiento[];
   moviles: Movil[];
+  personal: TurnoPersonal[];
+  historialTurnos: RegistroTurno[];
   actualizadoEn: number;
 }
 
@@ -39,8 +41,11 @@ export interface ClienteDatos {
   pedirApoyo(movilId: string, por: Usuario, ubicacion: Punto): Procedimiento;
   /** El patrullero abre su turno en un móvil: desde ese momento la Central puede despacharle. */
   iniciarTurno(movilId: string, turno: Omit<TurnoMovil, "usuarioId" | "iniciadoEn">, por: Usuario, posicion?: Punto): void;
-  /** Cierra el turno del móvil; queda sin turno y no recibe despachos. */
-  cerrarTurno(movilId: string, por: Usuario): void;
+  /** Cierra el turno del móvil (con kilometraje y novedades); queda sin turno y no recibe despachos. */
+  cerrarTurno(movilId: string, por: Usuario, cierre?: CierreTurno): void;
+  /** Turno de punto fijo o a pie (sin móvil). */
+  iniciarTurnoPersonal(datos: Omit<TurnoPersonal, "id" | "usuarioId" | "iniciadoEn">, por: Usuario): TurnoPersonal;
+  cerrarTurnoPersonal(id: string, por: Usuario, cierre?: CierreTurno): void;
   /** Solo demo: avanza un paso de la operación simulada. */
   simularPaso(): void;
   /** Solo demo: vuelve a los datos de ejemplo iniciales. */
@@ -48,7 +53,7 @@ export interface ClienteDatos {
   readonly modo: "demo" | "supabase";
 }
 
-const CLAVE_ALMACEN = "plataforma.demo.v4";
+const CLAVE_ALMACEN = "plataforma.demo.v5";
 const CANAL = "plataforma-demo";
 
 class ClienteDemo implements ClienteDatos {
@@ -105,7 +110,13 @@ class ClienteDemo implements ClienteDatos {
   }
 
   private armarSnap(): Instantanea {
-    return { procedimientos: this.datos.procedimientos, moviles: this.datos.moviles, actualizadoEn: this.datos.actualizadoEn };
+    return {
+      procedimientos: this.datos.procedimientos,
+      moviles: this.datos.moviles,
+      personal: this.datos.personal ?? [],
+      historialTurnos: this.datos.historialTurnos ?? [],
+      actualizadoEn: this.datos.actualizadoEn,
+    };
   }
 
   private confirmar() {
@@ -205,7 +216,7 @@ class ClienteDemo implements ClienteDatos {
   pedirApoyo(movilId: string, por: Usuario, ubicacion: Punto): Procedimiento {
     const movil = this.datos.moviles.find((m) => m.id === movilId);
     return this.crearProcedimiento(
-      { claveNumero: 57, descripcion: `Solicitud de apoyo desde ${movil?.nombre ?? "patrullero"}.`, direccion: "Ubicación del móvil que solicita apoyo", ubicacion },
+      { claveNumero: 57, descripcion: `Solicitud de apoyo desde ${movil?.nombre ?? por.nombre}.`, direccion: movil ? "Ubicación del móvil que solicita apoyo" : "Ubicación del patrullero que solicita apoyo", ubicacion },
       por,
     );
   }
@@ -223,13 +234,64 @@ class ClienteDemo implements ClienteDatos {
     this.confirmar();
   }
 
-  cerrarTurno(movilId: string, por: Usuario) {
+  cerrarTurno(movilId: string, por: Usuario, cierre: CierreTurno = {}) {
     const m = this.datos.moviles.find((x) => x.id === movilId);
     if (!m?.turno) return;
     if (m.turno.usuarioId !== por.id && !["administrador", "supervisor"].includes(por.rol)) throw new Error("Sin permiso para cerrar este turno");
     if (m.procedimientoId) throw new Error("El móvil tiene un procedimiento activo");
+    if (cierre.kmFinal != null && m.turno.kmInicial != null && cierre.kmFinal < m.turno.kmInicial) {
+      throw new Error(`El kilometraje final no puede ser menor que el inicial (${m.turno.kmInicial}).`);
+    }
+    this.registrar({
+      usuarioId: m.turno.usuarioId,
+      patrullero: m.turno.patrullero,
+      acompanante: m.turno.acompanante,
+      modalidad: "movil",
+      unidad: m.nombre,
+      iniciadoEn: m.turno.iniciadoEn,
+      kmInicial: m.turno.kmInicial,
+      ...cierre,
+    });
     this.actualizarMovil(movilId, { estado: "sin_turno", turno: null, procedimientoId: null });
     this.confirmar();
+  }
+
+  iniciarTurnoPersonal(datos: Omit<TurnoPersonal, "id" | "usuarioId" | "iniciadoEn">, por: Usuario): TurnoPersonal {
+    if ((this.datos.personal ?? []).some((p) => p.usuarioId === por.id) || this.datos.moviles.some((m) => m.turno?.usuarioId === por.id)) {
+      throw new Error("Ya tienes un turno abierto");
+    }
+    const t: TurnoPersonal = { ...datos, id: `pers-${Date.now()}`, usuarioId: por.id, iniciadoEn: new Date().toISOString() };
+    this.datos.personal = [...(this.datos.personal ?? []), t];
+    this.confirmar();
+    return t;
+  }
+
+  cerrarTurnoPersonal(id: string, por: Usuario, cierre: CierreTurno = {}) {
+    const t = (this.datos.personal ?? []).find((p) => p.id === id);
+    if (!t) return;
+    if (t.usuarioId !== por.id && !["administrador", "supervisor"].includes(por.rol)) throw new Error("Sin permiso para cerrar este turno");
+    this.registrar({ usuarioId: t.usuarioId, patrullero: t.patrullero, acompanante: t.acompanante, modalidad: t.modalidad, unidad: t.lugar, iniciadoEn: t.iniciadoEn, kmInicial: null, ...cierre });
+    this.datos.personal = (this.datos.personal ?? []).filter((p) => p.id !== id);
+    this.confirmar();
+  }
+
+  private registrar(r: Omit<RegistroTurno, "id" | "cerradoEn" | "kmFinal" | "combustibleFinal" | "novedadesChecklist" | "observaciones"> & CierreTurno) {
+    const registro: RegistroTurno = {
+      id: `turno-${Date.now()}`,
+      cerradoEn: new Date().toISOString(),
+      kmFinal: r.kmFinal ?? null,
+      combustibleFinal: r.combustibleFinal ?? null,
+      novedadesChecklist: r.novedadesChecklist ?? [],
+      observaciones: r.observaciones?.trim() ?? "",
+      usuarioId: r.usuarioId,
+      patrullero: r.patrullero,
+      acompanante: r.acompanante,
+      modalidad: r.modalidad,
+      unidad: r.unidad,
+      iniciadoEn: r.iniciadoEn,
+      kmInicial: r.kmInicial,
+    };
+    this.datos.historialTurnos = [registro, ...(this.datos.historialTurnos ?? [])].slice(0, 500);
   }
 
   simularPaso() {
