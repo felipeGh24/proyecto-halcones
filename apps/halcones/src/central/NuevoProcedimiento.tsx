@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { centroideUV, movilesCercanos, obtenerCliente, puede, UNIDADES_VECINALES, unidadVecinalDe, useDatos, type Punto } from "@plataforma/datos";
+import { centroideUV, historialCercano, obtenerClave, movilesCercanos, obtenerCliente, puede, UNIDADES_VECINALES, unidadVecinalDe, useDatos, type Punto } from "@plataforma/datos";
 import { Mapa } from "@plataforma/mapa";
 import { avisar, Boton, Campo, Modal, useUsuario } from "@plataforma/ui";
 import { BuscadorClave } from "./BuscadorClave";
@@ -21,6 +21,7 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
   const [enfoque, setEnfoque] = useState<Punto | null>(null);
   const [errores, setErrores] = useState<Record<string, string>>({});
   const uv = punto ? unidadVecinalDe(punto) : null;
+  const historial = punto ? historialCercano(procedimientos, punto) : null;
   const masCercano = punto ? movilesCercanos(moviles, punto, 1)[0] : undefined;
   // Móvil a despachar: el que eligió el operador si sigue libre; si no, el libre más cercano.
   const elegidoLibre = moviles.find((m) => m.id === movilElegido && m.estado === "disponible" && m.turno);
@@ -124,6 +125,12 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
                 ? `Punto: ${uv ? `${uv.nombre} · ${uv.barrio}` : "fuera de la comuna"} · ${punto.lat.toFixed(5)}, ${punto.lng.toFixed(5)} · arrastra el marcador para corregir`
                 : "Haz clic en el mapa para fijar el punto exacto."}
           </p>
+          {historial && (
+            <div className={`historial ${historial.n >= 5 ? "historial--alto" : ""}`}>
+              <strong>{historial.n === 0 ? "Sin procedimientos cerca en los últimos 30 días" : `${historial.n} procedimientos a menos de ${historial.metros} m en los últimos ${historial.dias} días`}</strong>
+              {historial.n > 0 && <span className="pequeno texto-2">Lo más frecuente: {historial.claves.map((c) => `${obtenerClave(c.numero)?.nombre.toLowerCase()} (${c.n})`).join(", ")}</span>}
+            </div>
+          )}
         </div>
       </form>
     </Modal>

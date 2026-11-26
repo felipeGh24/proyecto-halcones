@@ -9,3 +9,13 @@
 .mapa-leyenda i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--borde); display: inline-block; }
 .mapa-leyenda i.anillo { background: #fff; border-width: 3px; box-shadow: none; }
 .mapa-leyenda i.anillo.grueso { border-width: 4px; }
+.mapa-etiqueta-uv { font: 600 10px var(--fuente); color: var(--texto-2); background: rgba(255, 255, 255, 0.85); border-radius: 4px; padding: 0 3px; pointer-events: none; }
+.mapa-etiqueta-barrio { font: 600 12px var(--fuente-titulo); color: var(--texto); text-transform: uppercase; letter-spacing: 0.06em; background: rgba(255, 255, 255, 0.9); border: 1px solid var(--borde); border-radius: 6px; padding: 2px 8px; pointer-events: none; white-space: nowrap; }
+.mapa-marca { font: 600 11px var(--fuente); border-radius: 999px; padding: 3px 9px; border: 2px solid #fff; color: #fff; cursor: pointer; box-shadow: 0 2px 6px rgba(16, 24, 40, 0.25); white-space: nowrap; }
+.mapa-marca--punto_fijo { background: #0F766E; }
+.mapa-marca--patrullaje { background: #1D4ED8; }
+.mapa-marca--alza { background: #DC6803; }
+.mapa-marca--respuesta { background: #475467; }
+.mapa-escala { display: grid; gap: 4px; font-size: 11px; color: var(--texto-2); }
+.mapa-escala__barra { height: 10px; border-radius: 5px; background: linear-gradient(90deg, rgb(239, 244, 255), rgb(23, 37, 84)); }
+.mapa-escala__extremos { display: flex; justify-content: space-between; }

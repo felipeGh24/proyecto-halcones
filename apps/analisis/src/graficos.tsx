@@ -108,3 +108,170 @@ export function BarrasHorizontales({ filas, unidad }: { filas: { etiqueta: strin
     </ol>
   );
 }
+
+/** Barras verticales con valor sobre cada barra y eje Y rotulado. */
+export function BarrasVerticales({ datos, unidad, alto = 220 }: { datos: { etiqueta: string; n: number; resaltar?: boolean }[]; unidad: string; alto?: number }) {
+  const W = 520, H = alto, izq = 36, der = 8, arr = 20, aba = 26;
+  const ticks = pasos(Math.max(1, ...datos.map((d) => d.n)));
+  const top = ticks[ticks.length - 1];
+  const ancho = (W - izq - der) / datos.length;
+  const y = (v: number) => H - aba - (v / top) * (H - arr - aba);
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="grafico" role="img" aria-label={unidad}>
+      {ticks.map((t) => (
+        <g key={t}>
+          <line x1={izq} x2={W - der} y1={y(t)} y2={y(t)} stroke={REJILLA} />
+          <text x={izq - 6} y={y(t) + 4} textAnchor="end" fontSize="11" fill={TEXTO}>
+            {numero(t)}
+          </text>
+        </g>
+      ))}
+      {datos.map((d, i) => (
+        <g key={d.etiqueta}>
+          <rect x={izq + i * ancho + ancho * 0.18} y={y(d.n)} width={ancho * 0.64} height={Math.max(0, H - aba - y(d.n))} rx="3" fill={d.resaltar ? AZUL : "#84ADFF"} />
+          <text x={izq + i * ancho + ancho / 2} y={y(d.n) - 5} textAnchor="middle" fontSize="11" fontWeight="600" fill="#0E1A2B">
+            {numero(d.n)}
+          </text>
+          <text x={izq + i * ancho + ancho / 2} y={H - 8} textAnchor="middle" fontSize="11" fill={TEXTO}>
+            {d.etiqueta}
+          </text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+/** Barras apiladas por semáforo (los colores del semáforo sí significan algo aquí). */
+export function BarrasSemaforo({ grupos }: { grupos: { etiqueta: string; rojo: number; amarillo: number; verde: number }[] }) {
+  const W = 520, H = 220, izq = 36, der = 8, arr = 20, aba = 26;
+  const ticks = pasos(Math.max(1, ...grupos.map((g) => g.rojo + g.amarillo + g.verde)));
+  const top = ticks[ticks.length - 1];
+  const ancho = (W - izq - der) / grupos.length;
+  const alto = (v: number) => (v / top) * (H - arr - aba);
+  const colores = { rojo: "#B42318", amarillo: "#DC6803", verde: "#079455" } as const;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="grafico" role="img" aria-label="Procedimientos por turno y semáforo">
+      {ticks.map((t) => (
+        <g key={t}>
+          <line x1={izq} x2={W - der} y1={H - aba - alto(t)} y2={H - aba - alto(t)} stroke={REJILLA} />
+          <text x={izq - 6} y={H - aba - alto(t) + 4} textAnchor="end" fontSize="11" fill={TEXTO}>
+            {numero(t)}
+          </text>
+        </g>
+      ))}
+      {grupos.map((g, i) => {
+        let base = H - aba;
+        const total = g.rojo + g.amarillo + g.verde;
+        return (
+          <g key={g.etiqueta}>
+            {(["rojo", "amarillo", "verde"] as const).map((s) => {
+              const h = alto(g[s]);
+              base -= h;
+              return (
+                <rect key={s} x={izq + i * ancho + ancho * 0.22} y={base} width={ancho * 0.56} height={h} fill={colores[s]} stroke="#fff" strokeWidth="1">
+                  <title>{`${g.etiqueta} · ${s}: ${g[s]}`}</title>
+                </rect>
+              );
+            })}
+            <text x={izq + i * ancho + ancho / 2} y={base - 6} textAnchor="middle" fontSize="11" fontWeight="600" fill="#0E1A2B">
+              {numero(total)}
+            </text>
+            <text x={izq + i * ancho + ancho / 2} y={H - 8} textAnchor="middle" fontSize="11" fill={TEXTO}>
+              {g.etiqueta}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+/** Histograma del tiempo de respuesta con las metas marcadas. */
+export function HistogramaRespuesta({ minutos }: { minutos: number[] }) {
+  const cortes = [0, 2, 4, 6, 8, 10, 12, 15, 20, 30];
+  const conteo = cortes.map((c, i) => minutos.filter((m) => m >= c && (i === cortes.length - 1 || m < cortes[i + 1])).length);
+  const W = 1040, H = 260, izq = 40, der = 8, arr = 40, aba = 40;
+  const ticks = pasos(Math.max(1, ...conteo));
+  const top = ticks[ticks.length - 1];
+  const ancho = (W - izq - der) / cortes.length;
+  const y = (v: number) => H - aba - (v / top) * (H - arr - aba);
+  const xDe = (min: number) => {
+    const i = cortes.findIndex((c, k) => k === cortes.length - 1 || (min >= c && min < cortes[k + 1]));
+    const sig = cortes[i + 1] ?? cortes[i] + 10;
+    return izq + (i + (min - cortes[i]) / (sig - cortes[i])) * ancho;
+  };
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="grafico" role="img" aria-label="Distribución del tiempo de respuesta en minutos">
+      {ticks.map((t) => (
+        <g key={t}>
+          <line x1={izq} x2={W - der} y1={y(t)} y2={y(t)} stroke={REJILLA} />
+          <text x={izq - 6} y={y(t) + 4} textAnchor="end" fontSize="11" fill={TEXTO}>
+            {numero(t)}
+          </text>
+        </g>
+      ))}
+      {conteo.map((n, i) => (
+        <rect key={i} x={izq + i * ancho + 2} y={y(n)} width={ancho - 4} height={Math.max(0, H - aba - y(n))} rx="2" fill="#84ADFF">
+          <title>{`${cortes[i]}${i === cortes.length - 1 ? "+" : `–${cortes[i + 1]}`} min: ${n}`}</title>
+        </rect>
+      ))}
+      {[
+        { m: 3, t: "meta crítica 3 min", fila: 0 },
+        { m: 5, t: "meta alta 5 min", fila: 1 },
+        { m: 15, t: "meta media 15 min", fila: 0 },
+      ].map(({ m, t, fila }) => (
+        <g key={m}>
+          <line x1={xDe(m)} x2={xDe(m)} y1={10 + fila * 14} y2={H - aba} stroke="#0E1A2B" strokeDasharray="3 3" />
+          <text x={xDe(m) + 4} y={18 + fila * 14} fontSize="11" fill="#0E1A2B">
+            {t}
+          </text>
+        </g>
+      ))}
+      {cortes.map((c, i) => (
+        <text key={c} x={izq + i * ancho + 2} y={H - 22} textAnchor="middle" fontSize="11" fill={TEXTO}>
+          {i === cortes.length - 1 ? `${c}+` : c}
+        </text>
+      ))}
+      <text x={W - der} y={H - 4} textAnchor="end" fontSize="11" fill={TEXTO}>
+        minutos desde la recepción hasta llegar al lugar
+      </text>
+    </svg>
+  );
+}
+
+/** Mini gráfico de tendencia semanal. */
+export function Sparkline({ valores, ancho = 96, alto = 24 }: { valores: number[]; ancho?: number; alto?: number }) {
+  const max = Math.max(1, ...valores);
+  const x = (i: number) => (i / Math.max(1, valores.length - 1)) * (ancho - 4) + 2;
+  const y = (v: number) => alto - 2 - (v / max) * (alto - 4);
+  const ult = valores.length - 1;
+  return (
+    <svg width={ancho} height={alto} viewBox={`0 0 ${ancho} ${alto}`} aria-hidden>
+      <polyline fill="none" stroke={AZUL} strokeWidth="1.5" points={valores.map((v, i) => `${x(i)},${y(v)}`).join(" ")} />
+      <circle cx={x(ult)} cy={y(valores[ult] ?? 0)} r="2.5" fill={AZUL} />
+    </svg>
+  );
+}
+
+/** Índice por zona con la línea del promedio comunal (1,0). */
+export function BarrasIndice({ filas }: { filas: { etiqueta: string; indice: number; detalle?: string }[] }) {
+  const max = Math.max(2, ...filas.map((f) => f.indice));
+  return (
+    <div className="indice">
+      {filas.map((f) => (
+        <div key={f.etiqueta} className="indice__fila">
+          <span className="indice__etiqueta">
+            {f.etiqueta}
+            {f.detalle && <span className="pequeno texto-3"> {f.detalle}</span>}
+          </span>
+          <span className="indice__pista">
+            <i style={{ width: `${(f.indice / max) * 100}%`, background: f.indice >= 1.25 ? AZUL : "#84ADFF" }} />
+            <b style={{ left: `${(1 / max) * 100}%` }} title="Promedio de la comuna" />
+          </span>
+          <span className="num indice__valor">{f.indice.toFixed(2).replace(".", ",")}</span>
+        </div>
+      ))}
+      <p className="pequeno texto-3">1,00 = promedio de la comuna (línea vertical). Se pondera por gravedad: crítica 5, alta 3, media 2, baja 1.</p>
+    </div>
+  );
+}

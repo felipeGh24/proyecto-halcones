@@ -1,5 +1,15 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import {
+  analizarPatrones,
+  infoDeClave,
+  partesLocales,
+  tiemposDe,
+  TIPOS_RECOMENDACION,
+  TURNOS,
+  turnoDe,
+  useDatos,
+  type Turno,
   cumplimientoPorSemaforo,
   duracion,
   horaPorDia,
@@ -14,7 +24,7 @@ import {
   type Semaforo as TipoSemaforo,
 } from "@plataforma/datos";
 import { Indicador, Tarjeta, Vacio } from "@plataforma/ui";
-import { BarrasHorizontales, GraficoEvolucion, MapaCalorHoras } from "./graficos";
+import { BarrasHorizontales, BarrasSemaforo, BarrasVerticales, GraficoEvolucion, HistogramaRespuesta, MapaCalorHoras } from "./graficos";
 import { BarraFiltros, useFiltros } from "./filtros";
 import { MarcoAnalisis } from "./MarcoAnalisis";
 
@@ -44,6 +54,20 @@ export function Panel() {
   const topUV = useMemo(() => ranking(actual, (p) => p.unidadVecinal, 8), [actual]);
   const barrioDe = (uv: number) => actual.find((p) => p.unidadVecinal === uv)?.barrio ?? "";
   const cumpleAlerta = r.cumplimiento != null && r.cumplimiento < 0.6;
+  const { procedimientos } = useDatos();
+  const destacadas = useMemo(() => analizarPatrones(procedimientos).recomendaciones.slice(0, 3), [procedimientos]);
+  const porTurno = useMemo(() => {
+    const g = (Object.keys(TURNOS) as Turno[]).map((t) => ({ etiqueta: TURNOS[t].etiqueta, rojo: 0, amarillo: 0, verde: 0, t }));
+    actual.forEach((p) => g.find((x) => x.t === turnoDe(p.creadoEn))![infoDeClave(p.claveNumero).semaforo]++);
+    return g;
+  }, [actual]);
+  const porDiaSemana = useMemo(() => {
+    const n = Array(7).fill(0) as number[];
+    actual.forEach((p) => n[partesLocales(p.creadoEn).dia]++);
+    const max = Math.max(...n);
+    return ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map((d, i) => ({ etiqueta: d, n: n[i], resaltar: n[i] === max }));
+  }, [actual]);
+  const respuestas = useMemo(() => actual.map((p) => tiemposDe(p).respuesta).filter((x): x is number => x != null), [actual]);
 
   return (
     <MarcoAnalisis titulo="Panel de jefatura" subtitulo={`Últimos ${estado.periodo} días · ${numero(r.total)} procedimientos`}>
@@ -71,6 +95,17 @@ export function Panel() {
               <Indicador etiqueta="Llegada (mediana)" valor={duracion(r.llegadaMediana)} detalle={`antes: ${duracion(ra.llegadaMediana)}`} icono="auto" />
               <Indicador etiqueta="Cancelados" valor={numero(r.cancelados)} detalle={r.total ? `${porcentaje(r.cancelados / r.total)} del total` : ""} icono="cerrar" />
             </div>
+
+            {destacadas.length > 0 && (
+              <div className="destacadas">
+                {destacadas.map((d) => (
+                  <Link key={d.id} to="/patrones" className="ui-tarjeta destacada">
+                    <span className="pequeno texto-3">{TIPOS_RECOMENDACION[d.tipo].etiqueta} · sugerido por el motor de patrones</span>
+                    <strong>{d.titulo}</strong>
+                  </Link>
+                ))}
+              </div>
+            )}
 
             <div className="analisis__grilla">
               <Tarjeta titulo="Cumplimiento de meta por semáforo" subtitulo="% de procedimientos que llegaron al lugar dentro del tiempo esperado" className="ancho-2">
@@ -104,6 +139,18 @@ export function Panel() {
 
               <Tarjeta titulo="Cuándo pasa" subtitulo="Procedimientos por hora del día y día de la semana (más oscuro = más procedimientos)" className="ancho-2">
                 <MapaCalorHoras matriz={matriz} />
+              </Tarjeta>
+
+              <Tarjeta titulo="Por turno y semáforo" subtitulo="Procedimientos por turno. Rojo: crítica o alta · amarillo: media · verde: baja">
+                <BarrasSemaforo grupos={porTurno} />
+              </Tarjeta>
+
+              <Tarjeta titulo="Por día de la semana" subtitulo="Procedimientos; en azul oscuro el día con más casos">
+                <BarrasVerticales datos={porDiaSemana} unidad="Procedimientos por día de la semana" />
+              </Tarjeta>
+
+              <Tarjeta titulo="¿Cuánto tardamos en llegar?" subtitulo="Cantidad de procedimientos según minutos de respuesta, con las metas marcadas" className="ancho-2">
+                <HistogramaRespuesta minutos={respuestas} />
               </Tarjeta>
 
               <Tarjeta titulo="Qué pasa" subtitulo="Claves más frecuentes, en procedimientos">

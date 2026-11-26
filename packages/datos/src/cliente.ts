@@ -48,7 +48,7 @@ export interface ClienteDatos {
   readonly modo: "demo" | "supabase";
 }
 
-const CLAVE_ALMACEN = "plataforma.demo.v3";
+const CLAVE_ALMACEN = "plataforma.demo.v4";
 const CANAL = "plataforma-demo";
 
 class ClienteDemo implements ClienteDatos {

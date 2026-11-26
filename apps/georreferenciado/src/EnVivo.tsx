@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { esActivo, normalizar, obtenerClave, useDatos, type Punto } from "@plataforma/datos";
-import { CAPAS_INICIALES, LeyendaMapa, Mapa, type Capas, type Seleccion } from "@plataforma/mapa";
+import { analizarPatrones, esActivo, normalizar, obtenerClave, useDatos, type Punto } from "@plataforma/datos";
+import { CAPAS_INICIALES, EscalaCoropleta, LeyendaMapa, Mapa, type Capas, type MarcaMapa, type Seleccion } from "@plataforma/mapa";
 import { Icono, Insignia, Semaforo } from "@plataforma/ui";
 import { MarcoGeo } from "./MarcoGeo";
 import { PanelDetalle } from "./PanelDetalle";
@@ -13,9 +13,25 @@ const NOMBRES_CAPAS: { clave: keyof Capas; texto: string }[] = [
   { clave: "calor", texto: "Mapa de calor (últimos 30 días)" },
 ];
 
+type Extras = { barrios: boolean; uvs: boolean; conflicto: boolean; sugerencias: boolean };
+const NOMBRES_EXTRAS: { clave: keyof Extras; texto: string }[] = [
+  { clave: "barrios", texto: "Nombres de barrios" },
+  { clave: "uvs", texto: "Números de UV" },
+  { clave: "conflicto", texto: "Índice de conflicto por UV" },
+  { clave: "sugerencias", texto: "Puntos fijos y patrullajes sugeridos" },
+];
+
 export function EnVivo() {
   const { procedimientos, moviles } = useDatos();
   const [capas, setCapas] = useState<Capas>(CAPAS_INICIALES);
+  const [extras, setExtras] = useState<Extras>({ barrios: true, uvs: false, conflicto: false, sugerencias: false });
+  const patrones = useMemo(() => (extras.conflicto || extras.sugerencias ? analizarPatrones(procedimientos) : null), [procedimientos, extras.conflicto, extras.sugerencias]);
+  const coropleta = useMemo(() => {
+    if (!extras.conflicto || !patrones) return null;
+    const max = Math.max(...patrones.uvs.map((u) => u.indice), 1);
+    return Object.fromEntries(patrones.uvs.map((u) => [Number(u.clave), u.indice / max]));
+  }, [extras.conflicto, patrones]);
+  const marcas: MarcaMapa[] = extras.sugerencias && patrones ? patrones.recomendaciones.filter((r) => r.punto).map((r) => ({ id: r.id, punto: r.punto!, tipo: r.tipo, texto: r.tipo === "punto_fijo" ? "Punto fijo" : "Patrullaje", titulo: r.titulo })) : [];
   const [seleccion, setSeleccion] = useState<Seleccion>(null);
   const [texto, setTexto] = useState("");
   const [enfoque, setEnfoque] = useState<Punto | null>(null);
@@ -76,11 +92,32 @@ export function EnVivo() {
               </label>
             ))}
           </fieldset>
+          <fieldset className="geo__capas">
+            <legend>Territorio y patrones</legend>
+            {NOMBRES_EXTRAS.map((c) => (
+              <label key={c.clave} className="interruptor">
+                <input type="checkbox" checked={extras[c.clave]} onChange={(e) => setExtras((x) => ({ ...x, [c.clave]: e.target.checked }))} />
+                <span>{c.texto}</span>
+              </label>
+            ))}
+          </fieldset>
+          {extras.conflicto && <EscalaCoropleta titulo="Índice de conflicto (12 semanas)" min="menor" max="mayor" />}
           <LeyendaMapa />
         </aside>
 
         <section className="geo__mapa ui-tarjeta" aria-label="Mapa">
-          <Mapa procedimientos={procedimientos} moviles={moviles} calor={calor} capas={capas} seleccion={seleccion} onSeleccionar={setSeleccion} enfocar={enfoque} />
+          <Mapa
+            procedimientos={procedimientos}
+            moviles={moviles}
+            calor={calor}
+            capas={capas}
+            seleccion={seleccion}
+            onSeleccionar={setSeleccion}
+            enfocar={enfoque}
+            coropleta={coropleta}
+            etiquetas={{ barrios: extras.barrios, uvs: extras.uvs }}
+            marcas={marcas}
+          />
         </section>
 
         {seleccion && (

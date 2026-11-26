@@ -4,6 +4,33 @@ Cada sesión agrega una entrada arriba: fecha, sistema, qué se hizo, qué qued�
 
 ---
 
+## 2026-11-26 (2) · Motor de patrones, más gráficos y capas de territorio
+
+**Hecho**
+
+- `packages/datos/src/patrones.ts`, motor de patrones heurístico: reglas estadísticas explicables que se recalculan con cada procedimiento.
+  - Índice de conflicto por UV y por barrio, ponderado por gravedad (crítica 5, alta 3, media 2, baja 1; 1,0 = promedio comunal).
+  - Tendencia de 14 días frente a las 4 semanas previas (prueba de Poisson).
+  - Focos en celdas de unos 250 m.
+  - Recomendaciones con evidencia y confianza:
+    - Punto fijo: foco persistente y concentrado en una franja.
+    - Patrullaje preventivo o refuerzo.
+    - Alerta de alza.
+    - Móvil de espera donde la meta de respuesta se cumple menos.
+- Datos de demostración con 4 focos ficticios y un alza reciente (UV 36), para que el motor tenga patrones reales que descubrir.
+- **Análisis**
+  - Nueva página «Patrones e inteligencia»: recomendaciones con su evidencia, mapa coroplético por UV (índice o alza) con nombres de barrios y marcas de puntos fijos y patrullajes, índice por barrio contra el promedio, franja y turno críticos por barrio con tendencia, y las 15 UV con más conflicto con su tendencia de 12 semanas.
+  - En el panel: recomendaciones destacadas y gráficos nuevos (por turno y semáforo, por día de la semana, histograma del tiempo de respuesta con las metas marcadas).
+- **Georreferenciado**: capas de nombres de barrios, números de UV, índice de conflicto y sugerencias del motor.
+- **Halcones**
+  - Al crear un procedimiento se muestra cuántos hubo a menos de 200 m en 30 días y qué claves.
+  - El tablero muestra sugerencias para el turno.
+
+**Pendiente**
+
+- El índice usa conteos, no densidad por superficie ni población. Al tener la población por UV conviene una tasa por cada 1.000 habitantes.
+- Las metas de la vista SQL y del motor deben quedar configurables por organización.
+
 ## 2026-11-26 · Base de la plataforma y primera versión de los tres sistemas
 
 **Hecho**

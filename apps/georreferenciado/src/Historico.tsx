@@ -54,7 +54,7 @@ export function Historico() {
           </div>
         </aside>
         <section className="geo__mapa ui-tarjeta">
-          <Mapa calor={lista} capas={{ calor: true, procedimientos: false, moviles: false, recorridos: false }} />
+          <Mapa calor={lista} etiquetas={{ barrios: true }} capas={{ calor: true, procedimientos: false, moviles: false, recorridos: false }} />
         </section>
       </div>
     </MarcoGeo>

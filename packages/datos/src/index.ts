@@ -7,3 +7,4 @@ export * from "./geo";
 export * from "./auth";
 export * from "./cliente";
 export * from "./indicadores";
+export * from "./patrones";

@@ -19,6 +19,8 @@ import {
   SEMAFOROS,
   UNIDADES_VECINALES,
   esActivo,
+  BARRIOS,
+  centroideUV,
   type Movil,
   type Procedimiento,
   type Punto,
@@ -57,6 +59,22 @@ export const CAPAS_INICIALES: Capas = { unidadesVecinales: true, procedimientos:
 
 export type Seleccion = { tipo: "procedimiento" | "movil"; id: string } | null;
 
+/** Marca sobre el mapa (recomendación del motor de patrones, foco, etc.). */
+export interface MarcaMapa {
+  id: string;
+  punto: Punto;
+  texto: string;
+  tipo: "punto_fijo" | "patrullaje" | "alza" | "respuesta";
+  titulo?: string;
+}
+
+/** Escala secuencial azul (claro → oscuro) para valores 0–1. */
+export function colorSecuencial(t: number) {
+  const x = Math.max(0, Math.min(1, t));
+  const m = (a: number, b: number) => Math.round(a + (b - a) * x);
+  return `rgb(${m(239, 23)}, ${m(244, 37)}, ${m(255, 84)})`;
+}
+
 interface PropsMapa {
   procedimientos?: Procedimiento[];
   /** Procedimientos para el mapa de calor (normalmente el histórico filtrado). */
@@ -73,6 +91,12 @@ interface PropsMapa {
   enfocar?: Punto | null;
   className?: string;
   compacto?: boolean;
+  /** Valor 0–1 por unidad vecinal: pinta cada UV con la escala secuencial (mapa coroplético). */
+  coropleta?: Record<number, number> | null;
+  /** Muestra los nombres de los 7 barrios y los números de UV. */
+  etiquetas?: { barrios?: boolean; uvs?: boolean };
+  marcas?: MarcaMapa[];
+  onMarca?: (id: string) => void;
 }
 
 function fcProcedimientos(procs: Procedimiento[], seleccionId: string | null) {
@@ -158,6 +182,10 @@ export function Mapa({
   enfocar,
   className,
   compacto,
+  coropleta = null,
+  etiquetas,
+  marcas = [],
+  onMarca,
 }: PropsMapa) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapa = useRef<MapaGL | null>(null);
@@ -167,8 +195,10 @@ export function Mapa({
   const capas = { ...CAPAS_INICIALES, ...capasParciales };
 
   // Callbacks siempre actuales sin recrear el mapa.
-  const cb = useRef({ onSeleccionar, onClicMapa, onMoverMarcador });
-  cb.current = { onSeleccionar, onClicMapa, onMoverMarcador };
+  const cb = useRef({ onSeleccionar, onClicMapa, onMoverMarcador, onMarca });
+  cb.current = { onSeleccionar, onClicMapa, onMoverMarcador, onMarca };
+  const marcadoresHtml = useRef<Marker[]>([]);
+  const etiquetasHtml = useRef<Marker[]>([]);
 
   useEffect(() => {
     if (!contenedor.current) return;
@@ -298,6 +328,73 @@ export function Mapa({
     (m.getSource("recorridos") as GeoJSONSource).setData(fcRecorridos(procedimientos, moviles));
     (m.getSource("calor") as GeoJSONSource).setData(fcCalor(calor));
   }, [listo, procedimientos, moviles, calor, selProc, selMovil]);
+
+  // Mapa coroplético: cada UV con el color de su valor.
+  useEffect(() => {
+    const m = mapa.current;
+    if (!m || !listo) return;
+    if (!coropleta) {
+      m.setPaintProperty("uv-relleno", "fill-color", "#FFFFFF");
+      m.setPaintProperty("uv-relleno", "fill-opacity", TIENE_MAPA_BASE ? 0.05 : 1);
+      return;
+    }
+    const expr: unknown[] = ["match", ["get", "uv"]];
+    for (const [uv, v] of Object.entries(coropleta)) expr.push(Number(uv), colorSecuencial(v));
+    expr.push("#FFFFFF");
+    m.setPaintProperty("uv-relleno", "fill-color", expr as never);
+    m.setPaintProperty("uv-relleno", "fill-opacity", TIENE_MAPA_BASE ? 0.7 : 1);
+  }, [listo, coropleta]);
+
+  // Nombres de barrios y números de UV (marcadores HTML: no dependen de fuentes del proveedor de mapas).
+  const conBarrios = !!etiquetas?.barrios;
+  const conUVs = !!etiquetas?.uvs;
+  useEffect(() => {
+    const m = mapa.current;
+    if (!m || !listo) return;
+    etiquetasHtml.current.forEach((x) => x.remove());
+    etiquetasHtml.current = [];
+    if (conUVs) {
+      for (const f of UNIDADES_VECINALES.features) {
+        const c = centroideUV(f.properties.uv);
+        if (!c) continue;
+        const el = document.createElement("span");
+        el.className = "mapa-etiqueta-uv";
+        el.textContent = String(f.properties.uv);
+        etiquetasHtml.current.push(new Marker({ element: el }).setLngLat([c.lng, c.lat]).addTo(m));
+      }
+    }
+    if (conBarrios) {
+      for (const b of BARRIOS) {
+        const cs = UNIDADES_VECINALES.features.filter((f) => f.properties.barrio === b).map((f) => centroideUV(f.properties.uv)!).filter(Boolean);
+        const c = { lat: cs.reduce((s, x) => s + x.lat, 0) / cs.length, lng: cs.reduce((s, x) => s + x.lng, 0) / cs.length };
+        const el = document.createElement("span");
+        el.className = "mapa-etiqueta-barrio";
+        el.textContent = b.replace(/^Barrio /, "");
+        etiquetasHtml.current.push(new Marker({ element: el }).setLngLat([c.lng, c.lat]).addTo(m));
+      }
+    }
+  }, [listo, conBarrios, conUVs]);
+
+  // Marcas del motor de patrones.
+  const firmaMarcas = marcas.map((x) => `${x.id}:${x.punto.lat}:${x.punto.lng}`).join("|");
+  useEffect(() => {
+    const m = mapa.current;
+    if (!m || !listo) return;
+    marcadoresHtml.current.forEach((x) => x.remove());
+    marcadoresHtml.current = marcas.map((x) => {
+      const el = document.createElement("button");
+      el.type = "button";
+      el.className = `mapa-marca mapa-marca--${x.tipo}`;
+      el.textContent = x.texto;
+      el.title = x.titulo ?? x.texto;
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        cb.current.onMarca?.(x.id);
+      });
+      return new Marker({ element: el }).setLngLat([x.punto.lng, x.punto.lat]).addTo(m);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listo, firmaMarcas]);
 
   const vis = (b: boolean) => (b ? "visible" : "none");
   useEffect(() => {

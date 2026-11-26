@@ -8,6 +8,7 @@ export function MarcoAnalisis({ titulo, subtitulo, children }: { titulo: string;
       subtitulo={subtitulo}
       nav={[
         { a: "/panel", texto: "Panel de jefatura", icono: "grafico" },
+        { a: "/patrones", texto: "Patrones e inteligencia", icono: "capas" },
         { a: "/informes", texto: "Informes", icono: "documento" },
       ]}
     >

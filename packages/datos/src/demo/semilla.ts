@@ -1,5 +1,5 @@
 import { CLAVES, obtenerClave } from "../claves";
-import { UNIDADES_VECINALES, unidadVecinalDe } from "../geo";
+import { centroideUV, UNIDADES_VECINALES, unidadVecinalDe } from "../geo";
 import type { EstadoProcedimiento, EventoProcedimiento, Movil, Procedimiento, Punto, TipoMovil } from "../tipos";
 
 /**
@@ -121,11 +121,19 @@ export function generarDemo(ahora = Date.now(), dias = 90, semilla = 2026): Dato
     const base = ahora - d * 86400000;
     const diaSemana = (new Date(base).getUTCDay() + 6) % 7;
     const cantidad = Math.round(entre(azar, 6, 10) * (PESO_DIA[diaSemana] / 10));
+    const inicioDia = Math.floor(base / 86400000) * 86400000 + 3 * 3600000; // medianoche de Chile ≈ 03:00 UTC
     for (let i = 0; i < cantidad; i++) {
-      const h = elegirPonderado(azar, PESO_HORA.map((_, k) => k), PESO_HORA);
-      const inicioDia = Math.floor(base / 86400000) * 86400000 + 3 * 3600000; // medianoche de Chile ≈ 03:00 UTC
+      // Una parte de los casos ocurre en focos fijos, para que la demo tenga patrones reales que descubrir.
+      const foco = azar() < 0.2 ? FOCOS[Math.floor(azar() * FOCOS.length)] : null;
+      if (foco && !foco.dias.includes(diaSemana) && azar() < 0.7) continue;
+      const h = foco ? foco.horas[Math.floor(azar() * foco.horas.length)] : elegirPonderado(azar, PESO_HORA.map((_, k) => k), PESO_HORA);
       const t0 = inicioDia + h * 3600000 + azar() * 3600000;
-      procedimientos.push(historico(azar, ++secuencia, t0));
+      procedimientos.push(historico(azar, ++secuencia, t0, foco ?? undefined));
+    }
+    // Alza reciente en una unidad vecinal (últimas dos semanas).
+    if (d <= 14 && azar() < 0.75) {
+      const t0 = inicioDia + (17 + Math.floor(azar() * 6)) * 3600000;
+      procedimientos.push(historico(azar, ++secuencia, t0, { uv: 36, claves: [67, 39, 21, 5], radio: 0 }));
     }
   }
 
@@ -209,11 +217,12 @@ export function generarDemo(ahora = Date.now(), dias = 90, semilla = 2026): Dato
 
   return { procedimientos, moviles, secuencia };
 
-  function historico(azar: Azar, n: number, t0: number): Procedimiento {
-    const clave = elegirPonderado(azar, CLAVES_DEMO, PESOS_DEMO);
+  function historico(azar: Azar, n: number, t0: number, foco?: { uv: number; claves: number[]; radio: number }): Procedimiento {
+    const clave = foco ? obtenerClave(foco.claves[Math.floor(azar() * foco.claves.length)])! : elegirPonderado(azar, CLAVES_DEMO, PESOS_DEMO);
     const prioridad = obtenerClave(clave.numero)!.prioridad;
-    const uv = elegirPonderado(azar, UVS, PESO_UV);
-    const ubic = puntoEnUV(azar, uv);
+    const uv = foco ? foco.uv : elegirPonderado(azar, UVS, PESO_UV);
+    let ubic = foco?.radio ? cercaDe(azar, centroideUV(foco.uv)!, foco.radio) : puntoEnUV(azar, uv);
+    if (!unidadVecinalDe(ubic)) ubic = puntoEnUV(azar, uv);
     const props = unidadVecinalDe(ubic);
     const movil = MOVILES_BASE[Math.floor(azar() * MOVILES_BASE.length)];
     const tt = tiempos(azar, prioridad);
@@ -247,6 +256,20 @@ export function generarDemo(ahora = Date.now(), dias = 90, semilla = 2026): Dato
       eventos,
     };
   }
+}
+
+/** Focos ficticios de la demo: lugar, horas, días (0 = lunes) y claves típicas. */
+const FOCOS = [
+  { uv: 2, horas: [22, 23, 0, 1], dias: [4, 5], claves: [27, 66, 23, 5], radio: 70 },
+  { uv: 30, horas: [11, 13, 15, 17, 19, 21], dias: [0, 1, 2, 3, 4, 5, 6], claves: [67, 39, 15], radio: 90 },
+  { uv: 41, horas: [19, 20, 21, 22], dias: [3, 4, 5], claves: [26, 37, 23], radio: 70 },
+  { uv: 17, horas: [7, 8, 18, 19], dias: [0, 1, 2, 3, 4], claves: [2, 51, 81], radio: 80 },
+];
+
+function cercaDe(azar: Azar, c: Punto, metros: number): Punto {
+  const r = (metros / 111320) * Math.sqrt(azar());
+  const a = azar() * 2 * Math.PI;
+  return { lat: +(c.lat + r * Math.sin(a)).toFixed(6), lng: +(c.lng + (r * Math.cos(a)) / Math.cos((c.lat * Math.PI) / 180)).toFixed(6) };
 }
 
 export function folio(n: number): string {

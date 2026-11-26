@@ -3,6 +3,7 @@ import { Avisos, PantallaIngreso, PantallaSinAcceso, ProveedorSesion, RutaProteg
 import { ProveedorFiltros } from "./filtros";
 import { Informes } from "./Informes";
 import { Panel } from "./Panel";
+import { Patrones } from "./Patrones";
 
 export function App() {
   return (
@@ -17,6 +18,7 @@ export function App() {
                 "Tiempos reales de despacho, llegada y respuesta.",
                 "Cumplimiento de meta según el semáforo de cada clave.",
                 "Cuándo, dónde y qué pasa, con filtros comunes.",
+                "Patrones: dónde hace falta patrullaje, punto fijo o refuerzo, y por qué.",
                 "Planillas para Excel e informes para imprimir.",
               ]}
             />
@@ -30,6 +32,7 @@ export function App() {
               <ProveedorFiltros>
                 <Routes>
                   <Route path="/panel" element={<Panel />} />
+                  <Route path="/patrones" element={<Patrones />} />
                   <Route path="/informes" element={<Informes />} />
                   <Route path="*" element={<Navigate to="/panel" replace />} />
                 </Routes>

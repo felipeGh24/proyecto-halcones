@@ -27,3 +27,17 @@ export function LeyendaMapa() {
     </div>
   );
 }
+
+/** Escala del mapa coroplético. */
+export function EscalaCoropleta({ titulo, min, max }: { titulo: string; min: string; max: string }) {
+  return (
+    <div className="mapa-escala">
+      <strong style={{ color: "var(--texto)" }}>{titulo}</strong>
+      <span className="mapa-escala__barra" aria-hidden />
+      <span className="mapa-escala__extremos">
+        <span>{min}</span>
+        <span>{max}</span>
+      </span>
+    </div>
+  );
+}

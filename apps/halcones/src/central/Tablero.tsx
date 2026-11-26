@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { duracion, esActivo, infoDeClave, obtenerCliente, puede, resumen, useDatos } from "@plataforma/datos";
+import { analizarPatrones, duracion, esActivo, infoDeClave, obtenerCliente, puede, resumen, TIPOS_RECOMENDACION, useDatos } from "@plataforma/datos";
 import { Mapa, type Seleccion } from "@plataforma/mapa";
 import { Boton, Indicador, useUsuario } from "@plataforma/ui";
 import { Cola, ordenarCola } from "./Cola";
@@ -45,6 +45,8 @@ export function Tablero() {
     const t = setInterval(() => obtenerCliente().simularPaso(), 4000);
     return () => clearInterval(t);
   }, [simular]);
+
+  const sugerencias = useMemo(() => analizarPatrones(procedimientos).recomendaciones.filter((r) => r.tipo !== "respuesta").slice(0, 4), [procedimientos]);
 
   const procSel = seleccion?.tipo === "procedimiento" ? procedimientos.find((p) => p.id === seleccion.id) : undefined;
   const movilSel = seleccion?.tipo === "movil" ? moviles.find((m) => m.id === seleccion.id) : undefined;
@@ -96,6 +98,20 @@ export function Tablero() {
                 <p className="pequeno texto-3">
                   Atajo: tecla <kbd>N</kbd> para crear uno nuevo.
                 </p>
+              )}
+              {sugerencias.length > 0 && (
+                <div className="sugerencias">
+                  <h3>Sugerencias para el turno</h3>
+                  <p className="pequeno texto-3">Del motor de patrones, según las últimas 12 semanas.</p>
+                  <ul>
+                    {sugerencias.map((s) => (
+                      <li key={s.id}>
+                        <span className="pequeno texto-3">{TIPOS_RECOMENDACION[s.tipo].etiqueta}</span>
+                        <strong>{s.titulo}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
           )}
