@@ -148,3 +148,94 @@ export function IlustracionTodoEnOrden({ className }: { className?: string }) {
     </svg>
   );
 }
+
+/**
+ * Puesto de la Central de Operaciones (pantallas con mapa y cola, radio, audífonos) y, por la ventana,
+ * un móvil de seguridad municipal patrullando de noche. Sin personas. Estilo plano y sobrio, colores institucionales.
+ */
+export function IlustracionCentralPatrulla({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 640 400" aria-hidden="true">
+      {/* Sala */}
+      <rect width="640" height="400" fill="#13254A" />
+      <rect y="300" width="640" height="100" fill="#0D1B38" />
+      {/* Ventana con la calle de noche */}
+      <g>
+        <rect x="372" y="34" width="240" height="176" rx="4" fill="#1B3466" stroke="#2B4A86" strokeWidth="6" />
+        <rect x="378" y="40" width="228" height="164" fill="#0E1E40" />
+        <g fill="#24427C">
+          <rect x="384" y="96" width="34" height="80" />
+          <rect x="422" y="78" width="28" height="98" />
+          <rect x="454" y="108" width="40" height="68" />
+          <rect x="498" y="88" width="30" height="88" />
+          <rect x="532" y="112" width="34" height="64" />
+          <rect x="570" y="98" width="30" height="78" />
+        </g>
+        <g fill="#F2D27A" opacity=".75">
+          <rect x="390" y="106" width="6" height="7" /><rect x="404" y="124" width="6" height="7" /><rect x="430" y="92" width="6" height="7" />
+          <rect x="462" y="120" width="6" height="7" /><rect x="478" y="136" width="6" height="7" /><rect x="506" y="100" width="6" height="7" />
+          <rect x="540" y="124" width="6" height="7" /><rect x="578" y="110" width="6" height="7" /><rect x="586" y="140" width="6" height="7" />
+        </g>
+        <rect x="378" y="176" width="228" height="28" fill="#0A1630" />
+        <path d="M378 191H606" stroke="#C9A94A" strokeWidth="2" strokeDasharray="12 10" opacity=".55" />
+        {/* Móvil de seguridad municipal */}
+        <g transform="translate(436 160)">
+          <rect x="0" y="12" width="78" height="18" rx="5" fill="#F4F6FA" />
+          <path d="M14 12l9-10h30l10 10z" fill="#DCE3EE" />
+          <path d="M24 4h12v8H18zM40 4h12l7 8H40z" fill="#8FB4E8" />
+          <rect x="0" y="20" width="78" height="5" fill="#1D4ED8" />
+          <rect x="30" y="-3" width="18" height="5" rx="1.5" fill="#E0405A" />
+          <rect x="39" y="-3" width="9" height="5" rx="1.5" fill="#3B82F6" />
+          <circle cx="17" cy="31" r="6" fill="#0B1222" /><circle cx="61" cy="31" r="6" fill="#0B1222" />
+          <path d="M78 18h18l-18 6z" fill="#F2D27A" opacity=".35" />
+        </g>
+        <path d="M466 150l-16-10M476 150l16-10" stroke="#E0405A" strokeWidth="2" opacity=".35" />
+      </g>
+      {/* Mesa */}
+      <rect x="0" y="292" width="640" height="16" fill="#2B3F66" />
+      <rect x="0" y="308" width="640" height="6" fill="#0A1430" />
+      {/* Pantalla izquierda: mapa con puntos */}
+      <g>
+        <rect x="28" y="88" width="196" height="132" rx="6" fill="#0B1428" stroke="#3A4F7A" strokeWidth="4" />
+        <rect x="34" y="94" width="184" height="120" fill="#E8EEF7" />
+        <g stroke="#C5D0E0" strokeWidth="3" fill="none">
+          <path d="M34 130H218M34 172H218M80 94V214M150 94V214" />
+          <path d="M34 200L218 104" stroke="#F3D27A" strokeWidth="5" />
+        </g>
+        <circle cx="96" cy="140" r="6" fill="#B42318" /><circle cx="168" cy="118" r="6" fill="#DC6803" /><circle cx="130" cy="186" r="6" fill="#079455" />
+        <circle cx="112" cy="160" r="5" fill="#fff" stroke="#1D4ED8" strokeWidth="3" /><circle cx="190" cy="168" r="5" fill="#fff" stroke="#1D4ED8" strokeWidth="3" />
+        <rect x="116" y="220" width="20" height="58" fill="#33476E" /><rect x="92" y="276" width="68" height="10" rx="3" fill="#33476E" />
+      </g>
+      {/* Pantalla central: cola de procedimientos */}
+      <g>
+        <rect x="236" y="104" width="128" height="116" rx="6" fill="#0B1428" stroke="#3A4F7A" strokeWidth="4" />
+        <rect x="242" y="110" width="116" height="104" fill="#F4F6FA" />
+        <rect x="248" y="118" width="104" height="18" rx="3" fill="#fff" /><rect x="248" y="118" width="4" height="18" fill="#B42318" />
+        <rect x="248" y="142" width="104" height="18" rx="3" fill="#fff" /><rect x="248" y="142" width="4" height="18" fill="#DC6803" />
+        <rect x="248" y="166" width="104" height="18" rx="3" fill="#fff" /><rect x="248" y="166" width="4" height="18" fill="#079455" />
+        <rect x="248" y="190" width="104" height="18" rx="3" fill="#fff" /><rect x="248" y="190" width="4" height="18" fill="#DC6803" />
+        <g fill="#C5D0E0"><rect x="258" y="124" width="56" height="6" rx="2" /><rect x="258" y="148" width="44" height="6" rx="2" /><rect x="258" y="172" width="60" height="6" rx="2" /><rect x="258" y="196" width="38" height="6" rx="2" /></g>
+        <rect x="290" y="220" width="20" height="58" fill="#33476E" /><rect x="266" y="276" width="68" height="10" rx="3" fill="#33476E" />
+      </g>
+      {/* Radio base con micrófono */}
+      <g>
+        <rect x="392" y="246" width="104" height="46" rx="5" fill="#26324D" />
+        <rect x="402" y="256" width="44" height="16" rx="2" fill="#3FD08A" opacity=".85" />
+        <circle cx="466" cy="264" r="9" fill="#3A4766" /><circle cx="484" cy="276" r="5" fill="#3A4766" />
+        <g fill="#56627E"><rect x="402" y="278" width="8" height="5" rx="1" /><rect x="414" y="278" width="8" height="5" rx="1" /><rect x="426" y="278" width="8" height="5" rx="1" /></g>
+        <path d="M496 268c22 0 22 18 40 18" fill="none" stroke="#1A2238" strokeWidth="3" />
+        <rect x="532" y="276" width="16" height="22" rx="5" fill="#26324D" />
+      </g>
+      {/* Audífonos sobre la mesa */}
+      <g fill="none" stroke="#3A4766" strokeWidth="6" strokeLinecap="round">
+        <path d="M566 290c0-26 46-26 46 0" />
+      </g>
+      <rect x="558" y="282" width="14" height="14" rx="4" fill="#26324D" /><rect x="606" y="282" width="14" height="14" rx="4" fill="#26324D" />
+      {/* Teclado y libreta de turno */}
+      <rect x="132" y="294" width="150" height="10" rx="3" fill="#41557E" />
+      <rect x="298" y="290" width="58" height="12" rx="2" fill="#E8EEF7" transform="rotate(-4 327 296)" />
+      {/* Luz de la sala */}
+      <path d="M0 0H640V30H0z" fill="#0F2044" />
+    </svg>
+  );
+}

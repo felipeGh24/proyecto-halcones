@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CONTRASENA_DEMO, iniciarSesion, ROLES, SISTEMAS, tieneAcceso, USUARIOS_DEMO, type Sesion } from "@plataforma/datos";
 import { Boton, Campo, Insignia } from "./componentes";
-import { EmblemaHalcon, IlustracionCentral } from "./Ilustraciones";
+import { EmblemaHalcon, IlustracionCentralPatrulla } from "./Ilustraciones";
 import { Icono } from "./Icono";
 import { useSesion } from "./sesion";
 
@@ -53,7 +53,7 @@ export function PantallaIngreso({ puntos, destino }: { puntos: string[]; destino
           </div>
         </div>
         <div>
-          <IlustracionCentral className="ui-ingreso__ilustracion" />
+          <IlustracionCentralPatrulla className="ui-ingreso__ilustracion" />
           <p className="ui-ingreso__sistema">
             {info.nombre}
           </p>
