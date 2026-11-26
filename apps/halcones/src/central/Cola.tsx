@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ESTADOS, hace, infoDeClave, obtenerClave, type Movil, type Procedimiento } from "@plataforma/datos";
-import { Insignia, Segmentos, Semaforo, Vacio } from "@plataforma/ui";
+import { IlustracionTodoEnOrden, Insignia, Segmentos, Semaforo, Vacio } from "@plataforma/ui";
 
 /** Orden de la cola: semáforo, luego los no despachados, luego los más antiguos. */
 export function ordenarCola(procs: Procedimiento[]): Procedimiento[] {
@@ -43,7 +43,7 @@ export function Cola({ procedimientos, moviles, seleccionId, onSeleccionar }: { 
       <ul className="cola__lista" aria-label="Procedimientos activos">
         {lista.length === 0 && (
           <li>
-            <Vacio icono="check" titulo={filtro === "sin_despachar" ? "Todo despachado" : "Sin procedimientos activos"}>
+            <Vacio icono="check" ilustracion={<IlustracionTodoEnOrden className="ilustracion-vacia" />} titulo={filtro === "sin_despachar" ? "Todo despachado" : "Sin procedimientos activos"}>
               Los nuevos procedimientos aparecen aquí al instante.
             </Vacio>
           </li>

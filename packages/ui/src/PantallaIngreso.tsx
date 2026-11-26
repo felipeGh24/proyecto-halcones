@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CONTRASENA_DEMO, iniciarSesion, ROLES, SISTEMAS, tieneAcceso, USUARIOS_DEMO, type Sesion } from "@plataforma/datos";
 import { Boton, Campo, Insignia } from "./componentes";
+import { EmblemaHalcon, IlustracionCentral } from "./Ilustraciones";
 import { Icono } from "./Icono";
 import { useSesion } from "./sesion";
 
@@ -44,7 +45,7 @@ export function PantallaIngreso({ puntos, destino }: { puntos: string[]; destino
       <aside className="ui-ingreso__lado">
         <div className="ui-ingreso__marca">
           <span className="ui-marco__logo">
-            <Icono nombre="escudo" tamano={22} />
+            <EmblemaHalcon tamano={40} />
           </span>
           <div>
             <div className="ui-marco__nombre">Seguridad Pública</div>
@@ -52,7 +53,8 @@ export function PantallaIngreso({ puntos, destino }: { puntos: string[]; destino
           </div>
         </div>
         <div>
-          <p className="texto-3" style={{ fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", fontSize: 12 }}>
+          <IlustracionCentral className="ui-ingreso__ilustracion" />
+          <p className="ui-ingreso__sistema">
             {info.nombre}
           </p>
           <h1 className="ui-ingreso__titulo" style={{ marginTop: 8 }}>
@@ -67,7 +69,7 @@ export function PantallaIngreso({ puntos, destino }: { puntos: string[]; destino
             ))}
           </ul>
         </div>
-        <p className="pequeno texto-3">Plataforma integrada: Halcones · Georreferenciado · Análisis de eventos</p>
+        <p className="pequeno ui-ingreso__pie">Plataforma integrada: Halcones · Georreferenciado · Análisis de eventos</p>
       </aside>
 
       <section className="ui-ingreso__form">

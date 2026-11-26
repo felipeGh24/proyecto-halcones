@@ -1,4 +1,4 @@
-import { unidadVecinalDe } from "./geo";
+import { buscarLocal, unidadVecinalCercana as unidadVecinalDe } from "./geo";
 import type { Punto } from "./tipos";
 
 /**
@@ -8,14 +8,15 @@ import type { Punto } from "./tipos";
  * una vez en el mapa («Ubicar en el mapa») porque las direcciones son cruces de calles. En la demo las ubicaciones
  * quedan en este navegador; con la base de datos serán la tabla puntos_interes y las verá todo el equipo.
  */
-export type TipoPunto = "municipal" | "salud" | "bomberos" | "policia" | "educacion" | "seguridad" | "otro";
-export type GrupoPunto = "recintos_municipales" | "asistenciales_noche" | "propios";
+export type TipoPunto = "municipal" | "salud" | "bomberos" | "policia" | "metro" | "educacion" | "seguridad" | "otro";
+export type GrupoPunto = "recintos_municipales" | "asistenciales_noche" | "emergencias" | "propios";
 
 export const TIPOS_PUNTO: Record<TipoPunto, string> = {
   municipal: "Recinto municipal",
   salud: "Salud (SAPU, 24 horas)",
   bomberos: "Bomberos",
   policia: "Carabineros o PDI",
+  metro: "Estación de Metro",
   educacion: "Educación",
   seguridad: "Seguridad municipal",
   otro: "Otro",
@@ -24,6 +25,7 @@ export const TIPOS_PUNTO: Record<TipoPunto, string> = {
 export const GRUPOS_PUNTO: Record<GrupoPunto, string> = {
   recintos_municipales: "Recintos municipales (GAMA)",
   asistenciales_noche: "Recintos asistenciales de noche",
+  emergencias: "Carabineros, bomberos y metro",
   propios: "Otros puntos cargados",
 };
 
@@ -38,12 +40,16 @@ export interface PuntoInteres {
   grupo: GrupoPunto;
   direccion: string;
   horario?: string;
+  /** Texto con que se ubica en el callejero cuando la dirección oficial no es una esquina («Independencia con Manaos»). */
+  ubicarCon?: string;
   /** null = todavía no se ha fijado en el mapa. */
   ubicacion: Punto | null;
+  /** true si el punto lo calculó el sistema (esquina o número estimado) y nadie lo ha confirmado en el mapa. */
+  estimado?: boolean;
   unidadVecinal: number | null;
 }
 
-type Semilla = Omit<PuntoInteres, "ubicacion" | "unidadVecinal">;
+type Semilla = Omit<PuntoInteres, "ubicacion" | "unidadVecinal" | "estimado">;
 
 /** Catálogo entregado por el municipio (26-11-2026). Faltan GAMA 7, 9, 10, 11 y 12 si existen. */
 export const RECINTOS_CONCHALI: Semilla[] = [
@@ -56,8 +62,23 @@ export const RECINTOS_CONCHALI: Semilla[] = [
   { id: "gama-8", codigo: "GAMA 8", corto: "G8", nombre: "Bodegas de Cauquenes", tipo: "municipal", grupo: "recintos_municipales", direccion: "Cauquenes esquina Cristina" },
   { id: "gama-13", codigo: "GAMA 13", corto: "G13", nombre: "Sección de Reciclaje y Áreas Verdes", tipo: "municipal", grupo: "recintos_municipales", direccion: "Caletera Panamericana Norte con Cardenal Caro (frente a Unilever)" },
   { id: "gama-14", codigo: "GAMA 14", corto: "G14", nombre: "Espacio de la Mujer", tipo: "municipal", grupo: "recintos_municipales", direccion: "Independencia con Teniente Yávar" },
-  { id: "asist-24h", corto: "24H", nombre: "Recinto asistencial 24 horas", tipo: "salud", grupo: "asistenciales_noche", direccion: "Av. Independencia con Manaos", horario: "24 horas" },
-  { id: "sapu-lucas-sierra", corto: "SAPU", nombre: "SAPU Lucas Sierra", tipo: "salud", grupo: "asistenciales_noche", direccion: "Pedro Fontova esquina Pamplona", horario: "Atención nocturna" },
+  // Salud de urgencia (Dirección de Salud de Conchalí, Coresam y Minsal; noviembre de 2026).
+  { id: "asist-24h", corto: "SAR", nombre: "SAR Conchalí (urgencia 24 horas)", tipo: "salud", grupo: "asistenciales_noche", direccion: "Av. Independencia 5663", ubicarCon: "Independencia con Manaos", horario: "24 horas" },
+  { id: "sapu-lucas-sierra", corto: "SAPU", nombre: "SAPU Lucas Sierra", tipo: "salud", grupo: "asistenciales_noche", direccion: "Av. Pedro Fontova 4107", ubicarCon: "Pedro Fontova esquina Pamplona", horario: "Atención nocturna" },
+  { id: "sapu-bachelet", corto: "SAPU", nombre: "SAPU Alberto Bachelet Martínez", tipo: "salud", grupo: "asistenciales_noche", direccion: "Av. El Guanaco 3250", horario: "Atención nocturna" },
+  // Carabineros (Prefectura Santiago Norte).
+  { id: "cb-5-comisaria", corto: "5ª", nombre: "5ª Comisaría de Carabineros Conchalí", tipo: "policia", grupo: "emergencias", direccion: "Av. General Gambino 3739" },
+  { id: "cb-subcomisaria-norte", corto: "SC", nombre: "Subcomisaría Conchalí Norte", tipo: "policia", grupo: "emergencias", direccion: "Av. Independencia 6208" },
+  { id: "cb-reten-eneas-gonel", corto: "R", nombre: "Retén Eneas Gonel", tipo: "policia", grupo: "emergencias", direccion: "Armando Carrera 4041", ubicarCon: "Armando Carrera con Ciudad Real" },
+  // Cuerpo de Bomberos Conchalí-Huechuraba (compañías con cuartel en Conchalí).
+  { id: "bom-1", corto: "B1", nombre: "1ª Compañía de Bomberos «Pedro Aguirre Cerda»", tipo: "bomberos", grupo: "emergencias", direccion: "Av. Dorsal 1495" },
+  { id: "bom-4", corto: "B4", nombre: "4ª Compañía de Bomberos", tipo: "bomberos", grupo: "emergencias", direccion: "Av. Cardenal José María Caro 1593" },
+  { id: "bom-5", corto: "B5", nombre: "5ª Compañía de Bomberos «República Alemana»", tipo: "bomberos", grupo: "emergencias", direccion: "Av. El Guanaco 4488" },
+  { id: "bom-7", corto: "B7", nombre: "7ª Compañía y Comandancia de Bomberos", tipo: "bomberos", grupo: "emergencias", direccion: "Av. Quilicura 2275" },
+  // Metro Línea 3.
+  { id: "metro-conchali", corto: "L3", nombre: "Metro Conchalí", tipo: "metro", grupo: "emergencias", direccion: "Av. Independencia con Av. Dorsal" },
+  { id: "metro-vivaceta", corto: "L3", nombre: "Metro Vivaceta", tipo: "metro", grupo: "emergencias", direccion: "Av. Independencia 4765", ubicarCon: "Independencia con Los Zapadores" },
+  { id: "metro-cardenal-caro", corto: "L3", nombre: "Metro Cardenal Caro", tipo: "metro", grupo: "emergencias", direccion: "Av. Cardenal José María Caro 1857", ubicarCon: "Cardenal Caro con Independencia" },
 ];
 
 const CLAVE = "plataforma.puntos-interes.v2";
@@ -89,10 +110,26 @@ function escribir(g: Guardado) {
 export function leerPuntosInteres(): PuntoInteres[] {
   const g = leerGuardado();
   const catalogo = RECINTOS_CONCHALI.map((s) => {
-    const ubicacion = g.ubicaciones[s.id] ?? null;
-    return { ...s, ubicacion, unidadVecinal: ubicacion ? unidadVecinalDe(ubicacion)?.uv ?? null : null };
+    const fijada = g.ubicaciones[s.id] ?? null;
+    const calculada = fijada ? null : ubicacionCalculada(s);
+    const ubicacion = fijada ?? calculada;
+    return { ...s, ubicacion, estimado: !fijada && !!calculada, unidadVecinal: ubicacion ? unidadVecinalDe(ubicacion)?.uv ?? null : null };
   });
   return [...catalogo, ...g.propios];
+}
+
+const cacheCalculadas = new Map<string, Punto | null>();
+
+/**
+ * Punto calculado con el callejero: solo esquinas o números entre direcciones conocidas.
+ * Si la dirección no se puede ubicar con certeza razonable, queda sin ubicar para que el equipo la fije en el mapa.
+ */
+export function ubicacionCalculada(s: { id: string; direccion: string; ubicarCon?: string }): Punto | null {
+  if (cacheCalculadas.has(s.id)) return cacheCalculadas.get(s.id)!;
+  const r = buscarLocal(s.ubicarCon ?? s.direccion, 3).find((x) => x.tipo === "esquina" || x.tipo === "direccion");
+  const p = r && unidadVecinalDe(r.punto) ? r.punto : null;
+  cacheCalculadas.set(s.id, p);
+  return p;
 }
 
 export function ubicarPunto(id: string, punto: Punto | null) {

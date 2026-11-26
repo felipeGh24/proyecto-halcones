@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { buscarDirecciones, geocodificadorActivo, type SugerenciaDireccion } from "@plataforma/datos";
+import { buscarDirecciones, type SugerenciaDireccion } from "@plataforma/datos";
 import { Icono } from "./Icono";
 
 /**
  * Dirección con sugerencias de Conchalí.
  * Escribir «Independencia 3499» o «Independencia con La Palma» propone el punto; elegirlo lo marca en el mapa.
- * Si el buscador no responde (sin internet o servicio caído), el campo sigue funcionando como texto libre.
+ * Usa el callejero propio de Conchalí (funciona sin internet); con internet completa con OpenStreetMap.
+ * Entiende esquinas escritas de muchas formas («con», «esquina», «y», «/», «&», «c/»), abreviaturas y errores de tipeo.
  */
 export function EntradaDireccion({
   id,
@@ -15,6 +16,8 @@ export function EntradaDireccion({
   error,
   placeholder = "Calle y número, o esquina (ej.: Independencia con La Palma)",
   grande,
+  buscador = buscarDirecciones,
+  marca,
 }: {
   id: string;
   valor: string;
@@ -23,6 +26,10 @@ export function EntradaDireccion({
   error?: boolean;
   placeholder?: string;
   grande?: boolean;
+  /** Otro buscador (por ejemplo, Google Maps para crear procedimientos). */
+  buscador?: (texto: string, signal?: AbortSignal) => Promise<SugerenciaDireccion[]>;
+  /** Texto pequeño que indica de dónde salen las sugerencias («Google Maps»). */
+  marca?: string;
 }) {
   const [sugerencias, setSugerencias] = useState<SugerenciaDireccion[]>([]);
   const [estado, setEstado] = useState<"quieto" | "buscando" | "sin" | "error">("quieto");
@@ -31,7 +38,7 @@ export function EntradaDireccion({
   const escrito = useRef(false);
 
   useEffect(() => {
-    if (!escrito.current || !geocodificadorActivo() || valor.trim().length < 4) {
+    if (!escrito.current || valor.trim().length < 3) {
       setSugerencias([]);
       setEstado("quieto");
       return;
@@ -40,7 +47,7 @@ export function EntradaDireccion({
     const t = setTimeout(async () => {
       setEstado("buscando");
       try {
-        const r = await buscarDirecciones(valor, ctl.signal);
+        const r = await buscador(valor, ctl.signal);
         setSugerencias(r);
         setActivo(0);
         setEstado(r.length ? "quieto" : "sin");
@@ -48,20 +55,29 @@ export function EntradaDireccion({
       } catch (e) {
         if ((e as Error).name !== "AbortError") setEstado("error");
       }
-    }, 650);
+    }, 250);
     return () => {
       clearTimeout(t);
       ctl.abort();
     };
   }, [valor]);
 
-  function elegir(s: SugerenciaDireccion) {
+  async function elegir(s: SugerenciaDireccion) {
     escrito.current = false;
     onCambio(s.texto);
-    onElegir(s);
     setAbierto(false);
     setSugerencias([]);
-    setEstado("quieto");
+    if (!s.resolver) {
+      setEstado("quieto");
+      return onElegir(s);
+    }
+    setEstado("buscando");
+    try {
+      onElegir({ ...s, punto: await s.resolver() });
+      setEstado("quieto");
+    } catch {
+      setEstado("error");
+    }
   }
 
   return (
@@ -93,11 +109,15 @@ export function EntradaDireccion({
               setActivo((a) => Math.max(a - 1, 0));
             } else if (e.key === "Enter" && abierto) {
               e.preventDefault();
-              elegir(sugerencias[activo]);
+              void elegir(sugerencias[activo]);
             }
           }}
         />
-        {estado === "buscando" && <span className="ui-direccion__estado" aria-live="polite">Buscando…</span>}
+        {estado === "buscando" ? (
+          <span className="ui-direccion__estado" aria-live="polite">Buscando…</span>
+        ) : (
+          marca && <span className="ui-direccion__estado ui-direccion__marca">{marca}</span>
+        )}
       </div>
       {abierto && sugerencias.length > 0 && (
         <ul id={`${id}-sugerencias`} role="listbox" className="ui-direccion__lista">
@@ -109,20 +129,21 @@ export function EntradaDireccion({
               className={i === activo ? "activo" : ""}
               onMouseDown={(e) => {
                 e.preventDefault();
-                elegir(s);
+                void elegir(s);
               }}
             >
               <Icono nombre="pin" tamano={16} />
               <span>
                 <strong>{s.texto}</strong>
-                <span className="pequeno texto-3"> · {s.tipo === "esquina" ? "esquina" : s.detalle}</span>
+                <span className="pequeno texto-3"> · {s.detalle}</span>
+                {s.aproximado && <span className="ui-direccion__aprox">confirma el punto</span>}
               </span>
             </li>
           ))}
         </ul>
       )}
-      {estado === "sin" && abierto && <span className="ui-campo__ayuda">No encontré esa dirección en Conchalí: marca el punto en el mapa.</span>}
-      {estado === "error" && <span className="ui-campo__ayuda">Buscador de direcciones no disponible: marca el punto en el mapa.</span>}
+      {estado === "sin" && abierto && <span className="ui-campo__ayuda">No encontré esa dirección en Conchalí. Prueba con la esquina (ej.: «Dorsal con Guanaco») o marca el punto en el mapa.</span>}
+      {estado === "error" && <span className="ui-campo__ayuda">El buscador no respondió: marca el punto en el mapa.</span>}
     </div>
   );
 }

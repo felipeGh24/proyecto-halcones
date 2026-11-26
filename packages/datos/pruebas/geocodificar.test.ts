@@ -14,8 +14,8 @@ describe("direcciones", () => {
     expect(partirEsquina("Caletera P. Norte con Cardenal Caro frente a Unilever")?.[1]).toBe("Cardenal Caro");
     expect(partirEsquina("Independencia 3499")).toBeNull();
   });
-  it("todas las direcciones de recintos se pueden buscar", () => {
-    for (const r of RECINTOS_CONCHALI) expect(partirEsquina(r.direccion)).not.toBeNull();
+  it("todas las direcciones de recintos GAMA son esquinas", () => {
+    for (const r of RECINTOS_CONCHALI.filter((x) => x.grupo === "recintos_municipales")) expect(partirEsquina(r.direccion)).not.toBeNull();
   });
   it("calcula el cruce de dos calles", () => {
     const a = [{ lat: -33.38, lng: -70.68 }, { lat: -33.38, lng: -70.67 }];

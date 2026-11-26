@@ -33,6 +33,7 @@ export function MarcoCentral({ titulo, subtitulo, acciones, children }: { titulo
         { a: "/central/reportes", texto: "Reportes de terreno", icono: "documento", cuenta: sinLeer || undefined },
         { a: "/central/bitacora", texto: "Bitácora del turno", icono: "reloj" },
         { a: "/central/turnos", texto: "Turnos de la Central", icono: "personas" },
+        { a: "/central/lugares", texto: "Lugares y puntos fijos", icono: "pin" },
         { a: "/central/claves", texto: "Claves (81)", icono: "filtro" },
         ...(puede(usuario.rol, "configurar") ? [{ a: "/central/ajustes", texto: "Ajustes de la demo", icono: "ajustes" as const }] : []),
         // En la demo cualquiera puede probar la app del patrullero desde la Central.

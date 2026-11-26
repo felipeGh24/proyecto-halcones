@@ -11,7 +11,7 @@
 .tablero__indicadores { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .tablero__indicadores > * + * { border-left: 1px solid var(--borde); }
 .tablero__cola, .tablero__detalle { min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
-.tablero__mapa { min-height: 0; overflow: hidden; }
+.tablero__mapa { min-height: 0; overflow: hidden; position: relative; }
 .tablero__detalle { overflow: auto; }
 
 .cola { display: flex; flex-direction: column; min-height: 0; height: 100%; }
@@ -281,3 +281,58 @@ kbd { font-family: var(--fuente); font-size: 11px; border: 1px solid var(--borde
 .detalle__unidades { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .detalle__unidades li { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center; border: 1px solid var(--borde); border-radius: 8px; padding: 8px 10px; }
 .detalle__unidades-acciones { display: flex; gap: 10px; }
+.nuevo__aproximado { margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--ambar-suave); border: 1px solid #fedf89; color: #93370D; font-size: 13px; font-weight: 500; }
+.nuevo__lienzo { height: 440px; }
+
+/* ---------- Lugares y puntos fijos ---------- */
+.lugares { grid-template-columns: minmax(340px, 460px) minmax(0, 1fr); align-items: stretch; height: 100%; }
+.lugares__lista { display: flex; flex-direction: column; min-height: 0; overflow: auto; max-height: calc(100vh - 100px); }
+.lugares__cabeza { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 14px; border-bottom: 1px solid var(--borde); position: sticky; top: 0; background: var(--fondo); z-index: 1; }
+.lugares__form { display: grid; gap: 14px; padding: 16px; }
+.lugares__form h2 { font-size: 17px; }
+.lugares__punto { margin: -6px 0 0; font-size: 13px; color: var(--secundario); font-weight: 500; }
+.lugares__punto--falta { color: #93370D; }
+.lugares__activo { display: flex; gap: 10px; align-items: center; min-height: 44px; font-size: 14px; }
+.lugares__activo input { width: 18px; height: 18px; accent-color: var(--primario); }
+.lugares__acciones { display: flex; justify-content: flex-end; gap: 8px; }
+.lugares__items { list-style: none; margin: 0; padding: 8px; display: grid; gap: 6px; }
+.lugares__items > li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px; border: 1px solid var(--borde); border-radius: 10px; background: var(--fondo); }
+.lugares__items > li.lugares__sel { border-color: var(--primario); box-shadow: 0 0 0 2px var(--primario-suave); }
+.lugares__inactivo { opacity: 0.6; }
+.lugares__texto { display: grid; gap: 2px; min-width: 0; }
+.lugares__botones { display: flex; gap: 4px; align-items: center; }
+.lugares__pf { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #7C3AED; color: #fff; font: 700 11px var(--fuente); }
+.lugares__falta { justify-self: start; font-size: 11px; font-weight: 600; color: #93370D; background: var(--ambar-suave); border-radius: 999px; padding: 1px 8px; }
+.lugares__calc { justify-self: start; font-size: 11px; font-weight: 600; color: var(--primario); background: var(--primario-suave); border-radius: 999px; padding: 1px 8px; }
+.lugares__grupos { display: grid; gap: 4px; padding-bottom: 12px; }
+.lugares__grupo { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--texto-2); padding: 14px 16px 2px; }
+.lugares__aviso { margin: 10px; padding: 10px 12px; border-radius: 8px; background: var(--primario-suave); color: var(--primario); }
+.lugares__mapa { position: relative; min-height: 520px; overflow: hidden; }
+.lugares__mapa--editando { box-shadow: 0 0 0 3px var(--primario); }
+.lugares__mapa--editando .maplibregl-canvas { cursor: crosshair; }
+.lugares__guia { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); background: var(--texto); color: #fff; padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; pointer-events: none; }
+.lugares .mapa-poi { position: static; }
+@media (max-width: 1000px) { .lugares { grid-template-columns: 1fr; } .lugares__lista { max-height: none; } }
+.nuevo__google { margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--ambar-suave); border: 1px solid #fedf89; color: #93370D; font-size: 12.5px; }
+.nuevo__enlace-google { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; font-size: 13px; }
+
+/* ---------- App del patrullero: tema «Marino vivo» ---------- */
+.patrulla { background: #f1f5fb; }
+.patrulla__cabeza { background: linear-gradient(135deg, var(--marino), #1d4ed8); color: #fff; border-bottom: 0; box-shadow: 0 2px 10px rgba(11, 27, 63, 0.25); justify-content: flex-start; }
+.patrulla__cabeza-texto { flex: 1; min-width: 0; }
+.patrulla__cabeza .patrulla__titulo, .patrulla__cabeza strong { color: #fff; }
+.patrulla__cabeza .texto-3 { color: #bfd0f5; }
+.patrulla__cabeza .patrulla__enlace { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.3); color: #fff; }
+.patrulla__cabeza .patrulla__enlace:hover { background: rgba(255, 255, 255, 0.2); }
+.patrulla__bienvenida { display: grid; grid-template-columns: 132px 1fr; gap: 12px; align-items: center; padding: 10px 14px; border-radius: 14px; background: linear-gradient(135deg, #ffffff, #e8efff); border: 1px solid #c7d7fe; }
+.patrulla__bienvenida p { margin: 0; color: var(--texto-2); font-size: 14px; }
+.patrulla__bienvenida strong { color: var(--marino); font-size: 16px; display: block; }
+.patrulla__ilustracion { width: 100%; max-width: 240px; height: auto; }
+.patrulla__libre .patrulla__ilustracion { max-width: 260px; }
+.patrulla__pie, .patrulla__pestanas { background: #fff; }
+.patrulla__pestanas button[aria-current="page"] { color: var(--primario); }
+.patrulla__pestanas button[aria-current="page"] svg { background: var(--primario-suave); border-radius: 999px; padding: 3px 14px; box-sizing: content-box; }
+.patrulla__proc { background: #fff; box-shadow: var(--sombra); }
+.checklist { background: #fff; }
+.tarjeta-proc { background: #fff; }
+.tarjeta-proc--urgente { background: var(--rojo-suave); }

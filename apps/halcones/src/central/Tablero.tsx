@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { analizarPatrones, duracion, esActivo, infoDeClave, obtenerCliente, puede, resumen, TIPOS_RECOMENDACION, useDatos } from "@plataforma/datos";
-import { Mapa, type Seleccion } from "@plataforma/mapa";
+import { FiltrosMapa, Mapa, puntosVisibles, useFiltros, useLugares, type Seleccion } from "@plataforma/mapa";
+import { useNavigate } from "react-router-dom";
+import type { Punto } from "@plataforma/datos";
 import { Boton, Indicador, useUsuario } from "@plataforma/ui";
 import { Cola, ordenarCola } from "./Cola";
 import { Detalle } from "./Detalle";
@@ -16,6 +18,11 @@ export function Tablero() {
   const [seleccion, setSeleccion] = useState<Seleccion>(null);
   const [creando, setCreando] = useState(false);
   const [simular, setSimular] = useState(false);
+  const { puntos, fijos } = useLugares();
+  const [filtros, setFiltros] = useFiltros();
+  const [resaltado, setResaltado] = useState<string | null>(null);
+  const [enfoqueLugar, setEnfoqueLugar] = useState<Punto | null>(null);
+  const navegar = useNavigate();
   const puedeCrear = puede(usuario.rol, "crear_procedimiento");
 
   const activos = useMemo(() => ordenarCola(procedimientos.filter((p) => esActivo(p.estado))), [procedimientos, reportes]);
@@ -82,7 +89,30 @@ export function Tablero() {
         </section>
 
         <section className="tablero__mapa ui-tarjeta" aria-label="Mapa operativo">
-          <Mapa procedimientos={procedimientos} moviles={moviles} seleccion={seleccion} onSeleccionar={setSeleccion} enfocar={procSel?.ubicacion ?? movilSel?.posicion ?? null} etiquetas={{ barrios: true }} marcas={personal.map((p) => ({ id: p.id, punto: p.ubicacion, tipo: "personal" as const, texto: p.modalidad === "punto_fijo" ? "PF" : "A pie", titulo: `${p.patrullero} · ${p.lugar}` }))} />
+          <Mapa
+            procedimientos={procedimientos}
+            moviles={moviles}
+            seleccion={seleccion}
+            onSeleccionar={setSeleccion}
+            enfocar={enfoqueLugar ?? procSel?.ubicacion ?? movilSel?.posicion ?? null}
+            etiquetas={{ barrios: true }}
+            puntosInteres={puntosVisibles(puntos, filtros)}
+            puntosFijos={filtros.fijos ? fijos : []}
+            resaltado={resaltado}
+            marcas={personal.map((p) => ({ id: p.id, punto: p.ubicacion, tipo: "personal" as const, texto: p.modalidad === "punto_fijo" ? "PF" : "A pie", titulo: `${p.patrullero} · ${p.lugar}` }))}
+          />
+          <FiltrosMapa
+            puntos={puntos}
+            fijos={fijos}
+            filtros={filtros}
+            onFiltros={setFiltros}
+            resaltado={resaltado}
+            onElegir={(id, p) => {
+              setResaltado(id);
+              setEnfoqueLugar(p ? { ...p } : null);
+            }}
+            onUbicar={(id) => navegar(`/central/lugares?ubicar=${encodeURIComponent(id)}`)}
+          />
         </section>
 
         <section className="tablero__detalle ui-tarjeta" aria-label="Detalle">

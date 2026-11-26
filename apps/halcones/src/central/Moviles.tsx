@@ -1,4 +1,4 @@
-import { ESTADOS, ESTADOS_MOVIL, hace, hora, obtenerClave, obtenerCliente, puede, useDatos, type EstadoMovil, type Movil } from "@plataforma/datos";
+import { ESTADOS, ESTADOS_MOVIL, hace, hora, obtenerClave, obtenerCliente, puede, useDatos, type EstadoMovil, type Movil, compararMoviles } from "@plataforma/datos";
 import { avisar, Boton, Insignia, useUsuario } from "@plataforma/ui";
 import { MarcoCentral } from "./MarcoCentral";
 
@@ -76,7 +76,7 @@ export function Moviles() {
           </section>
         )}
         {GRUPOS.map((g) => {
-          const lista = moviles.filter((m) => g.estados.includes(m.estado)).sort((a, b) => a.nombre.localeCompare(b.nombre));
+          const lista = moviles.filter((m) => g.estados.includes(m.estado)).sort(compararMoviles);
           if (!lista.length) return null;
           return (
             <section key={g.titulo} className="grupo-moviles">

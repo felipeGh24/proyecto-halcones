@@ -9,6 +9,8 @@ export * from "./cliente";
 export * from "./indicadores";
 export * from "./patrones";
 export * from "./puntos-interes";
+export * from "./puntos-fijos";
+export * from "./moviles-orden";
 export * from "./adjuntos";
 export { datosVacios } from "./demo/semilla";
 export * from "./geocodificar";

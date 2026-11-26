@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { ESTADOS, SIGUIENTE, hace, infoDeClave, obtenerClave, obtenerCliente, procedimientoDeUnidad, unidadesActivas, useDatos, type EstadoProcedimiento, type EstadoUnidad, accesoTotalActivo } from "@plataforma/datos";
 import { AvisoDespacho } from "./AvisoDespacho";
-import { avisar, Boton, Icono, Insignia, Modal, Semaforo, useUsuario, type NombreIcono } from "@plataforma/ui";
+import { avisar, Boton, Icono, Insignia, Modal, Semaforo, useUsuario, type NombreIcono, EmblemaHalcon, IlustracionPatrulla } from "@plataforma/ui";
 import { CierreTurno } from "./CierreTurno";
 import { InicioTurno } from "./InicioTurno";
 import { NuevoReporte } from "./NuevoReporte";
@@ -70,7 +70,8 @@ export function Patrulla() {
   return (
     <div className="patrulla patrulla--con-pestanas">
       <header className="patrulla__cabeza">
-        <div>
+        <EmblemaHalcon tamano={36} />
+        <div className="patrulla__cabeza-texto">
           <strong className="patrulla__titulo">
             {turno.halcon ? `Halcón ${turno.halcon} · ` : ""}
             {turno.movil ? turno.movil.nombre : turno.puesto?.modalidad === "punto_fijo" ? "Punto fijo" : "A pie"}
@@ -133,9 +134,7 @@ export function Patrulla() {
               </section>
             ) : (
               <section className="patrulla__libre">
-                <span className="ui-vacio__icono">
-                  <Icono nombre="check" />
-                </span>
+                <IlustracionPatrulla className="patrulla__ilustracion" />
                 <h1>{turno.movil ? "Disponible" : "En servicio"}</h1>
                 <p className="texto-2">
                   {turno.movil ? `La Central te ve como libre en ${turno.movil.nombre}. Cuando te despache, el procedimiento aparecerá aquí al instante.` : `La Central te ve en ${turno.puesto!.lugar}.`}

@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { pedirPermisoNotificaciones } from "./AvisoDespacho";
 import { useState } from "react";
-import { centroideUV, leerPuntosInteres, obtenerCliente, UNIDADES_VECINALES, useDatos, type Modalidad, accesoTotalActivo } from "@plataforma/datos";
-import { avisar, Boton, Campo, Insignia, Segmentos, SelectorAdjuntos, useUsuario } from "@plataforma/ui";
+import { centroideUV, compararMoviles, leerPuntosFijos, leerPuntosInteres, obtenerCliente, UNIDADES_VECINALES, useDatos, type Modalidad, accesoTotalActivo } from "@plataforma/datos";
+import { avisar, Boton, Campo, Insignia, Segmentos, SelectorAdjuntos, useUsuario, EmblemaHalcon, IlustracionPatrulla } from "@plataforma/ui";
 import type { Adjunto } from "@plataforma/datos";
 
 export const ITEMS_CHECKLIST = ["Luces y baliza", "Sirena", "Radio", "Neumáticos", "Botiquín", "Extintor", "Carrocería", "Documentos del móvil"];
@@ -16,7 +16,8 @@ export const ITEMS_CHECKLIST = ["Luces y baliza", "Sirena", "Radio", "Neumático
 export function InicioTurno() {
   const usuario = useUsuario();
   const { moviles } = useDatos();
-  const [recintos] = useState(() => leerPuntosInteres().filter((p) => p.ubicacion));
+  const [recintos] = useState(() => leerPuntosInteres().filter((p) => p.ubicacion && p.grupo === "recintos_municipales"));
+  const [fijos] = useState(() => leerPuntosFijos().filter((p) => p.activo && p.ubicacion));
   const [modalidad, setModalidad] = useState<Modalidad>("movil");
   const [movilId, setMovilId] = useState("");
   const [nombre, setNombre] = useState(usuario.nombre);
@@ -37,7 +38,8 @@ export function InicioTurno() {
     !conMovil && !lugar && "el lugar",
   ].filter(Boolean) as string[];
   const listo = faltan.length === 0;
-  const ordenados = [...moviles].sort((a, b) => Number(!!a.turno) - Number(!!b.turno) || a.nombre.localeCompare(b.nombre));
+  // Orden de la flota: Móvil 01 a 17, Alpha y RAM (los ocupados quedan en su lugar, deshabilitados).
+  const ordenados = [...moviles].sort(compararMoviles);
 
   function iniciar() {
     setError("");
@@ -62,9 +64,10 @@ export function InicioTurno() {
           usuario,
         );
       } else {
+        const fijo = fijos.find((r) => r.id === lugar);
         const recinto = recintos.find((r) => r.id === lugar);
         const uv = lugar.startsWith("uv-") ? Number(lugar.slice(3)) : null;
-        const ubicacion = recinto?.ubicacion ?? (uv ? centroideUV(uv) : null);
+        const ubicacion = fijo?.ubicacion ?? recinto?.ubicacion ?? (uv ? centroideUV(uv) : null);
         if (!ubicacion) throw new Error("Elige un lugar válido.");
         obtenerCliente().iniciarTurnoPersonal(
           {
@@ -72,8 +75,8 @@ export function InicioTurno() {
             halcon: halcon.trim(),
             acompanante: acompanante.trim(),
             modalidad,
-            lugar: recinto ? `${recinto.codigo ? `${recinto.codigo} · ` : ""}${recinto.nombre}` : `UV ${String(uv).padStart(2, "0")}`,
-            puntoId: recinto?.id,
+            lugar: fijo ? fijo.nombre : recinto ? `${recinto.codigo ? `${recinto.codigo} · ` : ""}${recinto.nombre}` : `UV ${String(uv).padStart(2, "0")}`,
+            puntoId: fijo?.id ?? recinto?.id,
             ubicacion,
           },
           usuario,
@@ -88,7 +91,8 @@ export function InicioTurno() {
   return (
     <div className="patrulla">
       <header className="patrulla__cabeza">
-        <div>
+        <EmblemaHalcon tamano={36} />
+        <div className="patrulla__cabeza-texto">
           <h1 className="patrulla__titulo">Inicio de turno</h1>
           <div className="pequeno texto-3">Halcones · app del patrullero</div>
         </div>
@@ -107,6 +111,12 @@ export function InicioTurno() {
             {error}
           </div>
         )}
+        <div className="patrulla__bienvenida">
+          <IlustracionPatrulla className="patrulla__ilustracion" />
+          <p>
+            <strong>Buen turno.</strong> Elige cómo sales hoy y revisa el móvil antes de partir.
+          </p>
+        </div>
         <Segmentos<Modalidad>
           etiqueta="Modalidad"
           valor={modalidad}
@@ -136,8 +146,18 @@ export function InicioTurno() {
           <Campo etiqueta={modalidad === "punto_fijo" ? "Dónde está tu punto fijo" : "Sector que patrullas"} htmlFor="lugar">
             <select id="lugar" className="ui-entrada" value={lugar} onChange={(e) => setLugar(e.target.value)}>
               <option value="">Elegir…</option>
+              {modalidad === "punto_fijo" && fijos.length > 0 && (
+                <optgroup label="Puntos fijos">
+                  {fijos.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.nombre}
+                      {r.direccion ? ` · ${r.direccion}` : ""}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
               {modalidad === "punto_fijo" && recintos.length > 0 && (
-                <optgroup label="Recintos">
+                <optgroup label="Recintos municipales (GAMA)">
                   {recintos.map((r) => (
                     <option key={r.id} value={r.id}>
                       {r.codigo ? `${r.codigo} · ` : ""}

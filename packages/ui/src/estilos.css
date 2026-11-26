@@ -1,21 +1,27 @@
 /* =========================================================
-   Sistema de diseño «Claro institucional»
+   Sistema de diseño «Claro institucional», versión «Marino vivo» (26-11-2026):
+   barra lateral azul marino, acentos cian y fondo azulado para que no se vea tan blanco.
+   Paleta elegida con el plugin UI/UX Pro Max (perfil «Government/Public Service»: marino + azul de alto contraste).
    Fondo blanco, mucho aire, color solo donde significa algo.
    El rojo, el ámbar y el verde se reservan para el semáforo y los estados.
    ========================================================= */
 
 :root {
   --fondo: #ffffff;
-  --superficie: #f4f6fa;
-  --superficie-2: #eef1f6;
-  --borde: #e3e8ef;
-  --borde-fuerte: #cdd5df;
+  --superficie: #eaf0f8;
+  --superficie-2: #dce6f4;
+  --borde: #dde5f0;
+  --borde-fuerte: #c3cfdf;
   --texto: #0e1a2b;
   --texto-2: #475467;
-  --texto-3: #667085;
+  --texto-3: #556075;
   --primario: #1d4ed8;
   --primario-hover: #1e40af;
-  --primario-suave: #eff4ff;
+  --primario-suave: #e8efff;
+  --marino: #0b1b3f;
+  --marino-2: #12306b;
+  --acento: #22d3ee;
+  --acento-fuerte: #0e7490;
   --secundario: #0f766e;
   --secundario-suave: #f0fdfa;
   --rojo: #b42318;
@@ -27,7 +33,7 @@
 
   --radio: 10px;
   --radio-sm: 6px;
-  --sombra: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --sombra: 0 1px 2px rgba(16, 24, 40, 0.06), 0 6px 16px rgba(30, 58, 138, 0.06);
   --sombra-flotante: 0 12px 32px rgba(16, 24, 40, 0.12);
   --foco: 0 0 0 3px rgba(29, 78, 216, 0.25);
 
@@ -270,3 +276,60 @@ select.ui-entrada { padding-right: 32px; appearance: none; background-image: url
 .ui-direccion__lista li.activo, .ui-direccion__lista li:hover { background: var(--superficie); }
 .ui-direccion__lista li svg { color: var(--primario); flex: none; }
 .ui-entrada--grande { font-size: 16px; min-height: 48px; }
+.ui-direccion__lista li > span { display: grid; gap: 1px; }
+.ui-direccion__aprox { justify-self: start; font-size: 11px; font-weight: 600; color: #93370D; background: var(--ambar-suave); border: 1px solid #fedf89; border-radius: 999px; padding: 0 8px; }
+.ui-direccion__marca { font-weight: 600; color: var(--texto-3); pointer-events: none; }
+
+/* =========================================================
+   Tema «Marino vivo»
+   ========================================================= */
+.ui-boton--primario { background: linear-gradient(180deg, #2563eb, #1d4ed8); box-shadow: 0 1px 2px rgba(29, 78, 216, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.18); }
+.ui-boton--primario:hover:not(:disabled) { background: linear-gradient(180deg, #1d4ed8, #1e40af); }
+
+/* Barra lateral marino */
+.ui-marco__lateral { background: linear-gradient(180deg, var(--marino) 0%, #0f2656 60%, var(--marino-2) 100%); border-right: 0; color: #dbe4ff; }
+.ui-marco__marca { border-bottom-color: rgba(255, 255, 255, 0.1); }
+.ui-marco__logo { width: 36px; height: 36px; background: none; border-radius: 0; }
+.ui-marco__lateral .ui-marco__nombre { color: #fff; }
+.ui-marco__lateral .ui-marco__org { color: #93a9d6; }
+.ui-marco__seccion { color: #8ea4d6; }
+.ui-nav { color: #c7d2fe; }
+.ui-nav:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+.ui-nav.active { background: linear-gradient(90deg, #1d4ed8, #2563eb); color: #fff; box-shadow: inset 3px 0 0 var(--acento); }
+.ui-nav__cuenta { background: rgba(255, 255, 255, 0.14); color: #fff; border-radius: 999px; padding: 0 7px; min-width: 22px; text-align: center; }
+.ui-nav:focus-visible { box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.6); }
+.ui-marco__pie { border-top-color: rgba(255, 255, 255, 0.1); }
+.ui-marco__lateral .ui-boton--fantasma { color: #c7d2fe; }
+.ui-marco__lateral .ui-boton--fantasma:hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); color: #fff; }
+
+/* Barra superior con línea de acento */
+.ui-marco__superior { box-shadow: inset 0 3px 0 0 var(--acento); border-bottom-color: var(--borde); }
+.ui-marco__contenido { background: radial-gradient(1200px 400px at 100% 0%, #dfe9fb 0%, rgba(223, 233, 251, 0) 60%), var(--superficie); }
+.ui-reloj { color: var(--marino); }
+.ui-avatar { background: linear-gradient(135deg, #2563eb, #22d3ee); color: #fff; }
+
+/* Tarjetas e indicadores con color */
+.ui-tarjeta { border-color: var(--borde); }
+.ui-indicador__valor { color: var(--marino); }
+.ui-indicador__etiqueta svg { box-sizing: content-box; padding: 5px; border-radius: 8px; background: var(--primario-suave); color: var(--primario); }
+.ui-indicador:nth-child(2) .ui-indicador__etiqueta svg { background: #ecfeff; color: var(--acento-fuerte); }
+.ui-indicador:nth-child(3) .ui-indicador__etiqueta svg { background: #f3e8ff; color: #7c3aed; }
+.ui-indicador:nth-child(4) .ui-indicador__etiqueta svg { background: #e0e7ff; color: #4338ca; }
+.ui-indicador:nth-child(5) .ui-indicador__etiqueta svg { background: #ccfbf1; color: #0f766e; }
+.ui-indicador--alerta .ui-indicador__etiqueta svg { background: var(--rojo-suave); color: var(--rojo); }
+.ui-segmentos button[aria-pressed="true"] { color: var(--primario); }
+.ui-vacio__icono { background: linear-gradient(135deg, #e0e7ff, #cffafe); color: var(--primario); }
+.ilustracion-vacia { width: 96px; height: 96px; }
+
+/* Ingreso: panel ilustrado */
+.ui-ingreso__lado { background: linear-gradient(160deg, var(--marino) 0%, #12306b 55%, #1d4ed8 120%); border-right: 0; color: #dbe4ff; }
+.ui-ingreso__lado .ui-marco__nombre { color: #fff; }
+.ui-ingreso__lado .ui-marco__org { color: #93a9d6; }
+.ui-ingreso__ilustracion { width: 100%; max-width: 520px; height: auto; border-radius: 24px; box-shadow: 0 20px 50px rgba(2, 6, 23, 0.45); margin-bottom: 24px; }
+.ui-ingreso__sistema { font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; font-size: 12px; color: var(--acento); margin: 0; }
+.ui-ingreso__titulo { color: #fff; }
+.ui-ingreso__lista li { color: #c7d2fe; }
+.ui-ingreso__lista svg { color: var(--acento); }
+.ui-ingreso__pie { color: #93a9d6; }
+.ui-ingreso__form { background: #fff; }
+.ui-ingreso { background: var(--superficie); }

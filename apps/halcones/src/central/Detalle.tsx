@@ -18,6 +18,7 @@ import {
   type Procedimiento,
 } from "@plataforma/datos";
 import { avisar, Boton, Campo, EntradaDireccion, Insignia, Modal, Semaforo, useUsuario } from "@plataforma/ui";
+import { enlaceGoogleMaps } from "@plataforma/mapa";
 import { BuscadorClave } from "./BuscadorClave";
 import { SelectorUnidades } from "./SelectorUnidades";
 
@@ -95,7 +96,12 @@ export function Detalle({ procedimiento: p, moviles, procedimientos }: { procedi
         <h2>
           {p.claveNumero} · {obtenerClave(p.claveNumero)?.nombre}
         </h2>
-        <p className="texto-2">{p.direccion}</p>
+        <p className="texto-2">
+          {p.direccion}{" "}
+          <a className="pequeno" href={enlaceGoogleMaps(p.ubicacion)} target="_blank" rel="noopener noreferrer">
+            Ver en Google Maps ↗
+          </a>
+        </p>
         <p className="pequeno texto-3">
           {p.unidadVecinal ? `UV ${String(p.unidadVecinal).padStart(2, "0")} · ${p.barrio}` : "Fuera de las unidades vecinales"} · meta {info.respuesta.toLowerCase()}
         </p>

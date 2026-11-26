@@ -101,3 +101,21 @@ export function distanciaMetros(a: Punto, b: Punto): number {
 }
 
 export const BARRIOS = [...new Set(UNIDADES_VECINALES.features.map((f) => f.properties.barrio))].sort();
+
+export * from "./callejero";
+export * from "./buscador-local";
+
+/**
+ * Unidad vecinal del punto o, si cae justo en el borde de la comuna (avenidas límite como Independencia),
+ * la de la UV que está a menos de ~120 m. null si está realmente fuera de Conchalí.
+ */
+export function unidadVecinalCercana(p: Punto): PropiedadesUV | null {
+  const propia = unidadVecinalDe(p);
+  if (propia) return propia;
+  for (const r of [0.0004, 0.0008, 0.0012])
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) {
+      const uv = unidadVecinalDe({ lat: p.lat + dy * r, lng: p.lng + dx * r });
+      if (uv) return uv;
+    }
+  return null;
+}

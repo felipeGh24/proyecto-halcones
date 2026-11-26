@@ -1,11 +1,14 @@
 import type { Punto } from "./tipos";
-import { distanciaMetros, LIMITES_COMUNA, unidadVecinalDe } from "./geo";
+import { buscarLocal, calleYNumero, direccionLocal, esquinaLocal, LIMITES_COMUNA, normalizarTexto, registrarAnclas, registrarLugares, unidadVecinalCercana, unidadVecinalDe, distanciaMetros } from "./geo";
+import { leerPuntosInteres } from "./puntos-interes";
+import { leerPuntosFijos } from "./puntos-fijos";
 
 /**
  * Direcciones ↔ puntos, solo dentro de Conchalí.
  *
- * Demo: usa el servicio público de OpenStreetMap (Nominatim), que pide como máximo una consulta por segundo
- * y no garantiza disponibilidad. Para vender: instancia propia de Nominatim/Photon o un proveedor con contrato,
+ * Primero busca en el callejero propio (geo/buscador-local.ts: calles de OpenStreetMap embebidas, sin internet).
+ * Solo si ahí no encuentra nada consulta el servicio público de OpenStreetMap (Nominatim), que pide como máximo
+ * una consulta por segundo y no garantiza disponibilidad. Para vender: instancia propia de Nominatim/Photon o un proveedor con contrato,
  * configurable con VITE_GEOCODIFICADOR_URL («ninguno» lo desactiva y queda solo el clic en el mapa).
  *
  * Entiende «calle número» y esquinas: «Independencia con La Palma», «Av. Dorsal esq. Independencia», «Pedro Fontova / Pamplona».
@@ -15,6 +18,60 @@ export interface SugerenciaDireccion {
   detalle: string;
   punto: Punto;
   tipo: "direccion" | "esquina" | "calle" | "lugar";
+  /** true cuando el punto es estimado y conviene confirmarlo en el mapa. */
+  aproximado?: boolean;
+  /** Si existe, el punto se obtiene al elegir la sugerencia (por ejemplo, Google Places). */
+  resolver?: () => Promise<Punto>;
+}
+
+/* ---------------- Direcciones aprendidas ---------------- */
+
+const CLAVE_APRENDIDAS = "plataforma.direcciones-aprendidas.v1";
+interface Aprendida {
+  texto: string;
+  punto: Punto;
+}
+
+function leerAprendidas(): Record<string, Aprendida> {
+  try {
+    return (JSON.parse(localStorage.getItem(CLAVE_APRENDIDAS) ?? "null") as Record<string, Aprendida> | null) ?? {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Guarda una dirección con el punto que confirmó el operador. La próxima vez aparece exacta y, si es «calle número»,
+ * sirve de referencia para estimar los demás números de esa calle.
+ */
+export function recordarDireccion(texto: string, punto: Punto) {
+  const t = texto.trim();
+  if (t.length < 4 || !unidadVecinalCercana(punto)) return;
+  const a = leerAprendidas();
+  a[normalizarTexto(t)] = { texto: t, punto };
+  try {
+    localStorage.setItem(CLAVE_APRENDIDAS, JSON.stringify(a));
+  } catch {
+    /* sin espacio */
+  }
+}
+
+/** Lugares y referencias que el buscador local usa además de las calles. */
+function prepararBuscadorLocal() {
+  const aprendidas = Object.values(leerAprendidas());
+  registrarAnclas(aprendidas.flatMap((a) => {
+    const n = calleYNumero(a.texto);
+    return n ? [{ ...n, punto: a.punto }] : [];
+  }));
+  registrarLugares([
+    ...leerPuntosInteres()
+      .filter((p) => p.ubicacion)
+      .map((p) => ({ nombre: p.nombre, claves: [p.codigo ?? "", p.corto ?? "", p.codigo ? p.codigo.replace(/\s+/g, "") : ""].filter((x) => x.length >= 2), punto: p.ubicacion!, detalle: `${p.codigo ? `${p.codigo} · ` : ""}${p.direccion}` })),
+    ...leerPuntosFijos()
+      .filter((p) => p.ubicacion && p.activo)
+      .map((p) => ({ nombre: `Punto fijo ${p.nombre}`, claves: [p.nombre], punto: p.ubicacion!, detalle: p.direccion || "Punto fijo" })),
+    ...aprendidas.map((a) => ({ nombre: a.texto, claves: [], punto: a.punto, detalle: "Dirección usada antes · punto confirmado" })),
+  ]);
 }
 
 const URL_BASE = (() => {
@@ -130,6 +187,9 @@ export function cruceMasCercano(a: Punto[], b: Punto[]): Punto | null {
 }
 
 export async function buscarEsquina(a: string, b: string, signal?: AbortSignal): Promise<SugerenciaDireccion | null> {
+  const local = esquinaLocal(a, b);
+  if (local) return local;
+  if (!geocodificadorActivo()) return null;
   const [va, vb] = [await verticesDeCalle(a, signal), await verticesDeCalle(b, signal)];
   const p = cruceMasCercano(va, vb);
   if (!p || !enComuna(p)) return null;
@@ -138,14 +198,27 @@ export async function buscarEsquina(a: string, b: string, signal?: AbortSignal):
 
 /** Sugerencias para lo que escribe el operador. Nunca devuelve puntos fuera de Conchalí. */
 export async function buscarDirecciones(texto: string, signal?: AbortSignal): Promise<SugerenciaDireccion[]> {
-  if (!geocodificadorActivo()) return [];
+  prepararBuscadorLocal();
+  const locales = buscarLocal(texto);
+  // Con una esquina, un lugar conocido o un número ubicado, el callejero propio basta.
+  if (locales.some((s) => s.tipo !== "calle") || !geocodificadorActivo()) return locales;
   const limpio = limpiarDireccion(texto);
-  if (limpio.length < 4) return [];
+  if (limpio.length < 4) return locales;
   const esquina = partirEsquina(texto);
   if (esquina) {
-    const e = await buscarEsquina(esquina[0], esquina[1], signal);
-    return e ? [e] : [];
+    const e = await buscarEsquina(esquina[0], esquina[1], signal).catch(() => null);
+    return e ? [e, ...locales] : locales;
   }
+  try {
+    const remotos = await buscarRemoto(limpio, signal);
+    return [...remotos.filter((r) => r.tipo === "direccion"), ...locales, ...remotos.filter((r) => r.tipo !== "direccion")].slice(0, 6);
+  } catch (e) {
+    if ((e as Error).name === "AbortError") throw e;
+    return locales;
+  }
+}
+
+async function buscarRemoto(limpio: string, signal?: AbortSignal): Promise<SugerenciaDireccion[]> {
   const rs = await pedir<ResultadoNominatim[]>("/search", { q: `${limpio}, Conchalí`, countrycodes: "cl", viewbox: VIEWBOX, bounded: "1", addressdetails: "1", limit: "8" }, signal);
   const vistos = new Set<string>();
   const out: SugerenciaDireccion[] = [];
@@ -162,7 +235,8 @@ export async function buscarDirecciones(texto: string, signal?: AbortSignal): Pr
 
 /** Dirección aproximada de un punto marcado en el mapa (calle y número si se conoce). */
 export async function direccionDe(p: Punto, signal?: AbortSignal): Promise<string | null> {
-  if (!geocodificadorActivo()) return null;
+  const local = direccionLocal(p);
+  if (local || !geocodificadorActivo()) return local;
   try {
     const r = await pedir<ResultadoNominatim>("/reverse", { lat: p.lat.toFixed(6), lon: p.lng.toFixed(6), zoom: "18", addressdetails: "1" }, signal);
     if (!r?.address) return null;

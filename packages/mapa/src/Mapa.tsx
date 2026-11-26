@@ -10,6 +10,7 @@ import {
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { agregarAvenidas, agregarLugares, calleEn, LUGARES, primeraCapaDeTexto, resolverEstilo, type TipoLugar } from "./base";
+import { agregarCallesLocales, agregarSatelite, etiquetarCalles, modoCallesLocales } from "./callesLocales";
 import {
   ESTADOS,
   ESTADOS_MOVIL,
@@ -21,6 +22,8 @@ import {
   esActivo,
   BARRIOS,
   centroideUV,
+  calleEnPunto,
+  type PuntoFijo,
   type Movil,
   type PuntoInteres,
   type Procedimiento,
@@ -38,7 +41,7 @@ export function configurarWorkerMapa(url: string) {
   setWorkerUrl(url);
 }
 
-const TIPOS_PUNTO_LETRA: Record<PuntoInteres["tipo"], string> = { municipal: "M", salud: "S", bomberos: "B", policia: "C", educacion: "E", seguridad: "P", otro: "•" };
+const TIPOS_PUNTO_LETRA: Record<PuntoInteres["tipo"], string> = { municipal: "M", salud: "S", bomberos: "B", policia: "C", metro: "M", educacion: "E", seguridad: "P", otro: "•" };
 
 /** Zoom desde el cual se ocultan los nombres de barrio y aparecen los números de UV. */
 const ZOOM_CERCA = 14.3;
@@ -124,8 +127,14 @@ interface PropsMapa {
   colorBarrios?: boolean;
   /** Puntos de interés propios del municipio (edificios municipales, sedes, etc.). */
   puntosInteres?: PuntoInteres[];
-  /** Nombre de la calle más cercana al punto tocado (solo con mapa base). */
+  /** Nombre de la calle más cercana al punto tocado. */
   onCalle?: (nombre: string | null) => void;
+  /** Puntos fijos del municipio (personal apostado). */
+  puntosFijos?: PuntoFijo[];
+  /** Id del punto de interés o punto fijo destacado (por ejemplo, el GAMA elegido en los filtros). */
+  resaltado?: string | null;
+  /** Muestra el selector «Plano / Satélite» (por defecto sí, salvo en mapas compactos). */
+  conSatelite?: boolean;
 }
 
 /** Las etiquetas de barrio y UV son solo texto: no deben ser botones para el teclado ni para lectores de pantalla. */
@@ -230,6 +239,9 @@ export function Mapa({
   colorBarrios = true,
   puntosInteres = [],
   onCalle,
+  puntosFijos = [],
+  resaltado = null,
+  conSatelite,
 }: PropsMapa) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapa = useRef<MapaGL | null>(null);
@@ -238,6 +250,10 @@ export function Mapa({
   const [fallo, setFallo] = useState("");
   const [conBase, setConBase] = useState(false);
   const [cerca, setCerca] = useState(false);
+  const [fondo, setFondo] = useState<"plano" | "satelite">("plano");
+  const [sinSatelite, setSinSatelite] = useState(false);
+  const fondoRef = useRef(fondo);
+  fondoRef.current = fondo;
   const capas = { ...CAPAS_INICIALES, ...capasParciales };
 
   // Callbacks siempre actuales sin recrear el mapa.
@@ -265,7 +281,7 @@ export function Mapa({
           [LIMITES_COMUNA.maxLng, LIMITES_COMUNA.maxLat],
         ],
         fitBoundsOptions: { padding: compacto ? 16 : 40 },
-        attributionControl: base ? { compact: true } : false,
+        attributionControl: { compact: true, customAttribution: "Calles © colaboradores de OpenStreetMap" },
         maxBounds: [
           [LIMITES_COMUNA.minLng - 0.06, LIMITES_COMUNA.minLat - 0.05],
           [LIMITES_COMUNA.maxLng + 0.06, LIMITES_COMUNA.maxLat + 0.05],
@@ -291,6 +307,9 @@ export function Mapa({
       // Con calles, las UV van semitransparentes y debajo de los nombres de calles para no estorbar la lectura.
       m.addLayer({ id: "uv-relleno", type: "fill", source: "uv", paint: { "fill-color": "#FFFFFF", "fill-opacity": base ? 0.05 : 1 } }, antesDeTextos);
       m.addLayer({ id: "uv-borde", type: "line", source: "uv", paint: { "line-color": base ? "#667085" : "#98A2B3", "line-width": base ? 1.2 : 1, "line-opacity": base ? 0.7 : 1 } }, antesDeTextos);
+      // Fotos satelitales debajo de todo lo nuestro; calles propias cuando no hay mapa base (o sobre el satélite).
+      agregarSatelite(m, "uv-relleno");
+      agregarCallesLocales(m, base ? "oculto" : "plano");
       if (base) agregarLugares(m);
 
       m.addSource("calor", { type: "geojson", data: fcCalor([]) });
@@ -362,14 +381,19 @@ export function Mapa({
       m.on("click", (e) => {
         const tocados = m.queryRenderedFeatures(e.point, { layers: ["procedimientos", "moviles"] });
         if (tocados.length) return;
-        if (base) cb.current.onCalle?.(calleEn(m, e.point.x, e.point.y));
+        cb.current.onCalle?.((base && fondoRef.current === "plano" ? calleEn(m, e.point.x, e.point.y) : null) ?? calleEnPunto({ lat: e.lngLat.lat, lng: e.lngLat.lng })?.nombre ?? null);
         cb.current.onClicMapa?.({ lat: e.lngLat.lat, lng: e.lngLat.lng });
         if (!cb.current.onClicMapa) cb.current.onSeleccionar?.(null);
       });
       actualizarCerca();
       setListo(true);
     });
-    mm.on("error", (e) => console.warn("[mapa]", e.error?.message));
+    mm.on("error", (e) => {
+      if ((e as unknown as { sourceId?: string }).sourceId === "satelite") setSinSatelite(true);
+      else console.warn("[mapa]", e.error?.message);
+    });
+    const quitarEtiquetas = etiquetarCalles(mm, () => fondoRef.current === "satelite");
+    mm.once("remove", quitarEtiquetas);
     obs = new ResizeObserver(() => mm.resize());
     obs.observe(contenedor.current);
     });
@@ -407,10 +431,10 @@ export function Mapa({
         for (const [b, c] of Object.entries(COLORES_BARRIO)) expr.push(b, c);
         expr.push("#FFFFFF");
         m.setPaintProperty("uv-relleno", "fill-color", expr as never);
-        m.setPaintProperty("uv-relleno", "fill-opacity", conBase ? 0.28 : 1);
+        m.setPaintProperty("uv-relleno", "fill-opacity", fondo === "satelite" ? 0 : conBase ? 0.28 : 0.5);
       } else {
         m.setPaintProperty("uv-relleno", "fill-color", "#FFFFFF");
-        m.setPaintProperty("uv-relleno", "fill-opacity", conBase ? 0.05 : 1);
+        m.setPaintProperty("uv-relleno", "fill-opacity", fondo === "satelite" ? 0 : conBase ? 0.05 : 0.3);
       }
       return;
     }
@@ -419,7 +443,17 @@ export function Mapa({
     expr.push("#FFFFFF");
     m.setPaintProperty("uv-relleno", "fill-color", expr as never);
     m.setPaintProperty("uv-relleno", "fill-opacity", conBase ? 0.55 : 1);
-  }, [listo, coropleta, colorBarrios, conBase]);
+  }, [listo, coropleta, colorBarrios, conBase, fondo]);
+
+  // Plano o satélite: con satélite se ven las fotos, las calles propias encima en blanco y sus nombres.
+  useEffect(() => {
+    const m = mapa.current;
+    if (!m || !listo || !m.getLayer("satelite")) return;
+    m.setLayoutProperty("satelite", "visibility", fondo === "satelite" ? "visible" : "none");
+    modoCallesLocales(m, fondo === "satelite" ? "satelite" : conBase ? "oculto" : "plano");
+    m.setPaintProperty("uv-borde", "line-color", fondo === "satelite" ? "#FFFFFF" : conBase ? "#667085" : "#98A2B3");
+    m.fire("moveend");
+  }, [listo, fondo, conBase]);
 
   // Nombres de barrios y números de UV (marcadores HTML: no dependen de fuentes del proveedor de mapas).
   const conBarrios = !!etiquetas?.barrios;
@@ -491,7 +525,10 @@ export function Mapa({
   }, [listo, capas.unidadesVecinales, capas.procedimientos, capas.moviles, capas.calor, capas.recorridos, capas.avenidas, capas.salud, capas.bomberos, capas.policia, capas.municipal]);
 
   // Puntos de interés del municipio (recintos GAMA, asistenciales, otros) que ya tienen ubicación.
-  const conUbicacion = puntosInteres.filter((p) => p.ubicacion);
+  // Una estación de metro que además es punto fijo se muestra una sola vez (como punto fijo).
+  const conUbicacion = puntosInteres.filter(
+    (p) => p.ubicacion && !(p.tipo === "metro" && puntosFijos.some((f) => f.activo && f.ubicacion && Math.abs(f.ubicacion.lat - p.ubicacion!.lat) < 0.0005 && Math.abs(f.ubicacion.lng - p.ubicacion!.lng) < 0.0005)),
+  );
   const firmaPuntos = conUbicacion.map((p) => `${p.id}:${p.ubicacion!.lat}:${p.ubicacion!.lng}`).join("|");
   useEffect(() => {
     const m = mapa.current;
@@ -499,13 +536,39 @@ export function Mapa({
     puntosHtml.current.forEach((x) => x.remove());
     puntosHtml.current = conUbicacion.map((p) => {
       const el = document.createElement("span");
-      el.className = `mapa-poi mapa-poi--${p.tipo}`;
+      el.className = `mapa-poi mapa-poi--${p.tipo} ${p.estimado ? "mapa-poi--estimado" : ""} ${p.id === resaltado ? "mapa-poi--resaltado" : ""}`;
       el.textContent = p.corto ?? TIPOS_PUNTO_LETRA[p.tipo];
-      el.title = `${p.codigo ? `${p.codigo} · ` : ""}${p.nombre}${p.direccion ? ` · ${p.direccion}` : ""}${p.horario ? ` · ${p.horario}` : ""}`;
-      return new Marker({ element: el }).setLngLat([p.ubicacion!.lng, p.ubicacion!.lat]).addTo(m);
+      const titulo = `${p.codigo ? `${p.codigo} · ` : ""}${p.nombre}${p.direccion ? ` · ${p.direccion}` : ""}${p.horario ? ` · ${p.horario}` : ""}${p.estimado ? " · ubicación calculada, confírmala" : ""}`;
+      el.title = titulo;
+      const mk = new Marker({ element: el }).setLngLat([p.ubicacion!.lng, p.ubicacion!.lat]).addTo(m);
+      mk.getElement().setAttribute("aria-label", titulo);
+      if (p.id === resaltado) mk.setPopup(new Popup({ closeButton: false, offset: 16, className: "mapa-popup" }).setText(titulo)).togglePopup();
+      return mk;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listo, firmaPuntos]);
+  }, [listo, firmaPuntos, resaltado]);
+
+  // Puntos fijos: pin con «PF» y el nombre.
+  const firmaFijos = puntosFijos.filter((p) => p.ubicacion).map((p) => `${p.id}:${p.ubicacion!.lat}:${p.ubicacion!.lng}:${p.nombre}`).join("|");
+  const fijosHtml = useRef<Marker[]>([]);
+  useEffect(() => {
+    const m = mapa.current;
+    if (!m || !listo) return;
+    fijosHtml.current.forEach((x) => x.remove());
+    fijosHtml.current = puntosFijos
+      .filter((p) => p.ubicacion && p.activo)
+      .map((p) => {
+        const el = document.createElement("span");
+        el.className = `mapa-pf ${p.id === resaltado ? "mapa-pf--resaltado" : ""}`;
+        el.innerHTML = `<b>PF</b><span></span>`;
+        (el.lastChild as HTMLElement).textContent = p.nombre;
+        el.title = `Punto fijo · ${p.nombre}${p.direccion ? ` · ${p.direccion}` : ""}`;
+        const mk = new Marker({ element: el, anchor: "left" }).setLngLat([p.ubicacion!.lng, p.ubicacion!.lat]).addTo(m);
+        mk.getElement().setAttribute("aria-label", el.title);
+        return mk;
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listo, firmaFijos, resaltado]);
 
   // Marcador arrastrable para la ubicación exacta.
   useEffect(() => {
@@ -537,7 +600,21 @@ export function Mapa({
     <div className={`mapa ${cerca ? "mapa--cerca" : ""} ${etiquetas?.uvs ? "mapa--uv-siempre" : ""} ${className ?? ""}`}>
       <div ref={contenedor} className="mapa__lienzo" />
       {fallo && <div className="mapa__aviso">No se pudo mostrar el mapa en este equipo ({fallo}).</div>}
-      {listo && !conBase && !fallo && !compacto && <div className="mapa__base">Sin calles: no se pudo cargar el mapa base; se muestran solo las unidades vecinales</div>}
+      {listo && !fallo && (conSatelite ?? !compacto) && (
+        <div className="mapa__fondo" role="group" aria-label="Fondo del mapa">
+          <button type="button" aria-pressed={fondo === "plano"} onClick={() => setFondo("plano")}>
+            Plano
+          </button>
+          <button type="button" aria-pressed={fondo === "satelite"} onClick={() => { setSinSatelite(false); setFondo("satelite"); }}>
+            Satélite
+          </button>
+        </div>
+      )}
+      {fondo === "satelite" && sinSatelite && (
+        <div className="mapa__base" role="status">
+          Las fotos satelitales necesitan internet y aquí no cargaron; las calles siguen visibles.
+        </div>
+      )}
     </div>
   );
 }

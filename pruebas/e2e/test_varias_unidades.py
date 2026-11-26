@@ -16,7 +16,8 @@ def test_despacho_a_varias_unidades_y_avisos(pagina):
     pagina.ir("/halcones/patrulla", 800)
     p.fill("#nombre", "Patrullera Punto Fijo")
     p.click("text=Punto fijo")
-    p.select_option("#lugar", index=1)
+    # Punto fijo lejano (Metro Cardenal Caro) para que el móvil quede a cargo por cercanía.
+    p.select_option("#lugar", "pf-metro-cardenal-caro")
     p.click("text=Iniciar turno >> nth=-1")
     p.wait_for_timeout(600)
 
@@ -53,7 +54,7 @@ def test_despacho_a_varias_unidades_y_avisos(pagina):
     p.set_viewport_size({"width": 390, "height": 844})
     pagina.entrar("analista@demo.cl")
     pagina.ir("/halcones/patrulla", 800)
-    assert "Te enviaron de apoyo" in pagina.texto()
+    assert "Te enviaron de apoyo" in pagina.texto(), pagina.texto()[:600]
     assert "Móvil 03" in pagina.texto()
     p.click("text=Entendido")
     p.wait_for_timeout(300)

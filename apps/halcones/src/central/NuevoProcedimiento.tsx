@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { buscarEsquina, unidadesEnTurno, centroideUV, direccionDe, partirEsquina, ubicarPunto, historialCercano, leerPuntosInteres, obtenerClave, obtenerCliente, puede, UNIDADES_VECINALES, unidadVecinalDe, useDatos, type Punto } from "@plataforma/datos";
-import { Mapa } from "@plataforma/mapa";
+import { buscarDirecciones, buscarEsquina, unidadesEnTurno, type SugerenciaDireccion, centroideUV, direccionDe, partirEsquina, ubicarPunto, historialCercano, leerPuntosInteres, leerPuntosFijos, recordarDireccion, obtenerClave, obtenerCliente, puede, UNIDADES_VECINALES, unidadVecinalDe, useDatos, type Punto } from "@plataforma/datos";
+import { buscarDireccionesGoogle, direccionGoogle, enlaceGoogleMaps, googleConfigurado, Mapa, MapaGoogle } from "@plataforma/mapa";
 import { avisar, Boton, Campo, EntradaDireccion, Modal, useUsuario } from "@plataforma/ui";
 import { BuscadorClave } from "./BuscadorClave";
 import { SelectorUnidades } from "./SelectorUnidades";
@@ -29,11 +29,33 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
   // La dirección la escribe el operador; si la propuso el sistema, se puede reemplazar al mover el punto.
   const direccionPropuesta = useRef(true);
   const origenPunto = useRef<"mapa" | "direccion">("mapa");
+  // Si el operador escribió la dirección y después corrigió el punto, el sistema la aprende para la próxima vez.
+  const corrigioPunto = useRef(false);
+  const [aproximado, setAproximado] = useState(false);
+  const [fijos] = useState(() => leerPuntosFijos());
+  // Crear y despachar se hace con Google Maps; si no está configurado o no carga, se avisa y se usa el mapa propio.
+  const [google, setGoogle] = useState<"activo" | "no_configurado" | "fallo">(() => (googleConfigurado() ? "activo" : "no_configurado"));
+  const [motivoGoogle, setMotivoGoogle] = useState("");
+  const conGoogle = google === "activo";
+
+  async function buscarConGoogle(t: string, signal?: AbortSignal): Promise<SugerenciaDireccion[]> {
+    // Los lugares del municipio (GAMA, SAPU, puntos fijos) y direcciones ya confirmadas por el equipo van primero.
+    const propios = (await buscarDirecciones(t, signal)).filter((x) => x.tipo === "lugar").slice(0, 2);
+    try {
+      return [...propios, ...(await buscarDireccionesGoogle(t, signal))];
+    } catch (e) {
+      if ((e as Error).name === "AbortError") throw e;
+      setMotivoGoogle((e as Error).message);
+      setGoogle("fallo");
+      return propios;
+    }
+  }
 
   useEffect(() => {
     if (!punto || origenPunto.current !== "mapa") return;
     const ctl = new AbortController();
-    direccionDe(punto, ctl.signal).then((d) => {
+    (conGoogle ? direccionGoogle(punto) : direccionDe(punto, ctl.signal)).then((d) => {
+      if (ctl.signal.aborted) return;
       if (d && (direccionPropuesta.current || !direccion.trim())) {
         setDireccion(d);
         direccionPropuesta.current = true;
@@ -44,6 +66,8 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
   }, [punto]);
 
   function marcarEnMapa(p: Punto) {
+    if (!direccionPropuesta.current && direccion.trim().length >= 4) corrigioPunto.current = true;
+    setAproximado(false);
     origenPunto.current = "mapa";
     setPunto(p);
   }
@@ -76,6 +100,7 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
     if (!validar()) return;
     const cliente = obtenerCliente();
     const p = cliente.crearProcedimiento({ claveNumero: clave!, direccion, descripcion, ubicacion: punto! }, usuario);
+    if (corrigioPunto.current) recordarDireccion(direccion, punto!);
     let texto = `${p.folio} creado; queda en la cola sin despachar`;
     if (despachar && elegidas.length) {
       try {
@@ -122,6 +147,8 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
             <EntradaDireccion
               id="direccion"
               grande
+              buscador={conGoogle ? buscarConGoogle : undefined}
+              marca={conGoogle ? "Google Maps" : undefined}
               valor={direccion}
               error={!!errores.direccion}
               onCambio={(t) => {
@@ -131,6 +158,8 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
               onElegir={(s) => {
                 origenPunto.current = "direccion";
                 direccionPropuesta.current = false;
+                corrigioPunto.current = false;
+                setAproximado(!!s.aproximado);
                 setPunto(s.punto);
                 setEnfoque({ ...s.punto });
                 setErrores((e) => ({ ...e, punto: "", direccion: "" }));
@@ -256,7 +285,25 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
           <button type="submit" hidden />
         </div>
         <div className="nuevo__mapa">
+          {google !== "activo" && (
+            <p className="nuevo__google" role="status">
+              {google === "no_configurado"
+                ? "Google Maps no está configurado en esta demo: se usa el mapa propio. En producción el procedimiento se crea con Google Maps (falta la clave VITE_GOOGLE_MAPS_KEY)."
+                : `Google Maps no cargó (${motivoGoogle}). Se usa el mapa propio para no detener la operación.`}
+            </p>
+          )}
           <div className={`nuevo__lienzo ${errores.punto ? "nuevo__lienzo--error" : ""}`}>
+            {conGoogle ? (
+              <MapaGoogle
+                marcador={punto}
+                onMarcar={marcarEnMapa}
+                enfocar={enfoque}
+                onFallo={(m) => {
+                  setMotivoGoogle(m);
+                  setGoogle("fallo");
+                }}
+              />
+            ) : (
             <Mapa
               compacto
               moviles={moviles}
@@ -273,9 +320,17 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
               enfocar={enfoque}
               etiquetas={{ barrios: true }}
               puntosInteres={puntos}
+              puntosFijos={fijos}
+              conSatelite
               capas={{ procedimientos: false, recorridos: false }}
             />
+            )}
           </div>
+          {aproximado && punto && (
+            <p className="nuevo__aproximado" role="status">
+              Punto estimado: arrastra el marcador hasta la casa exacta. El sistema recordará esta dirección.
+            </p>
+          )}
           <p className={errores.punto ? "ui-campo__error" : "pequeno texto-2"}>
             {errores.punto
               ? errores.punto
@@ -283,6 +338,11 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
                 ? `Punto: ${calle ? `cerca de ${calle} · ` : ""}${uv ? `${uv.nombre} · ${uv.barrio}` : "fuera de la comuna"} · ${punto.lat.toFixed(5)}, ${punto.lng.toFixed(5)} · arrastra el marcador para corregir`
                 : "Haz clic en el mapa para fijar el punto exacto."}
           </p>
+          {punto && (
+            <a className="nuevo__enlace-google" href={enlaceGoogleMaps(punto)} target="_blank" rel="noopener noreferrer">
+              Abrir este punto en Google Maps ↗
+            </a>
+          )}
           {historial && (
             <div className={`historial ${historial.n >= 5 ? "historial--alto" : ""}`}>
               <strong>{historial.n === 0 ? "Sin procedimientos cerca en los últimos 30 días" : `${historial.n} procedimientos a menos de ${historial.metros} m en los últimos ${historial.dias} días`}</strong>

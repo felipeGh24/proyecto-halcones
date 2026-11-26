@@ -131,12 +131,14 @@ export function Modal({ titulo, subtitulo, onCerrar, children, pie, ancho }: { t
 }
 
 /* ---------- Vacío y carga ---------- */
-export function Vacio({ icono = "lista", titulo, children }: { icono?: NombreIcono; titulo: string; children?: ReactNode }) {
+export function Vacio({ icono = "lista", titulo, children, ilustracion }: { icono?: NombreIcono; titulo: string; children?: ReactNode; ilustracion?: ReactNode }) {
   return (
     <div className="ui-vacio">
-      <span className="ui-vacio__icono">
-        <Icono nombre={icono} />
-      </span>
+      {ilustracion ?? (
+        <span className="ui-vacio__icono">
+          <Icono nombre={icono} />
+        </span>
+      )}
       <strong style={{ color: "var(--texto)" }}>{titulo}</strong>
       {children && <p className="pequeno">{children}</p>}
     </div>
