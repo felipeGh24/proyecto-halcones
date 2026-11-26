@@ -1,23 +1,32 @@
 import { useMemo, useState } from "react";
-import { analizarPatrones, esActivo, normalizar, obtenerClave, useDatos, type Punto } from "@plataforma/datos";
+import { analizarPatrones, esActivo, leerPuntosInteres, normalizar, obtenerClave, useDatos, type PuntoInteres, type Punto } from "@plataforma/datos";
 import { CAPAS_INICIALES, EscalaCoropleta, LeyendaBarrios, LeyendaMapa, Mapa, type Capas, type MarcaMapa, type Seleccion } from "@plataforma/mapa";
 import { Icono, Insignia, Semaforo } from "@plataforma/ui";
 import { MarcoGeo } from "./MarcoGeo";
+import { PuntosPropios } from "./PuntosPropios";
 import { PanelDetalle } from "./PanelDetalle";
 
 const NOMBRES_CAPAS: { clave: keyof Capas; texto: string }[] = [
   { clave: "procedimientos", texto: "Procedimientos activos" },
   { clave: "moviles", texto: "Móviles" },
   { clave: "recorridos", texto: "Recorridos al destino" },
-  { clave: "unidadesVecinales", texto: "Unidades vecinales" },
+  { clave: "unidadesVecinales", texto: "Límites de unidades vecinales" },
   { clave: "calor", texto: "Mapa de calor (últimos 30 días)" },
+];
+
+const NOMBRES_LUGARES: { clave: keyof Capas; texto: string; color: string }[] = [
+  { clave: "avenidas", texto: "Avenidas principales", color: "#F2C94C" },
+  { clave: "salud", texto: "Centros de salud (SAPU, CESFAM, hospitales)", color: "#6941C6" },
+  { clave: "bomberos", texto: "Bomberos", color: "#C11574" },
+  { clave: "policia", texto: "Carabineros y PDI", color: "#155B75" },
+  { clave: "municipal", texto: "Edificios municipales del mapa base", color: "#0F766E" },
 ];
 
 type Extras = { colores: boolean; barrios: boolean; uvs: boolean; conflicto: boolean; sugerencias: boolean };
 const NOMBRES_EXTRAS: { clave: keyof Extras; texto: string }[] = [
   { clave: "colores", texto: "Colores por barrio" },
-  { clave: "barrios", texto: "Nombres de barrios" },
-  { clave: "uvs", texto: "Números de UV" },
+  { clave: "barrios", texto: "Nombres de barrios (al acercar: números de UV)" },
+  { clave: "uvs", texto: "Números de UV siempre visibles" },
   { clave: "conflicto", texto: "Índice de conflicto por UV" },
   { clave: "sugerencias", texto: "Puntos fijos y patrullajes sugeridos" },
 ];
@@ -25,6 +34,8 @@ const NOMBRES_EXTRAS: { clave: keyof Extras; texto: string }[] = [
 export function EnVivo() {
   const { procedimientos, moviles } = useDatos();
   const [capas, setCapas] = useState<Capas>(CAPAS_INICIALES);
+  const [puntos, setPuntos] = useState<PuntoInteres[]>(() => leerPuntosInteres());
+  const [verPuntos, setVerPuntos] = useState(true);
   const [extras, setExtras] = useState<Extras>({ colores: true, barrios: true, uvs: false, conflicto: false, sugerencias: false });
   const patrones = useMemo(() => (extras.conflicto || extras.sugerencias ? analizarPatrones(procedimientos) : null), [procedimientos, extras.conflicto, extras.sugerencias]);
   const coropleta = useMemo(() => {
@@ -94,6 +105,17 @@ export function EnVivo() {
             ))}
           </fieldset>
           <fieldset className="geo__capas">
+            <legend>Lugares (datos de OpenStreetMap)</legend>
+            {NOMBRES_LUGARES.map((c) => (
+              <label key={c.clave} className="interruptor">
+                <input type="checkbox" checked={capas[c.clave]} onChange={(e) => setCapas((x) => ({ ...x, [c.clave]: e.target.checked }))} />
+                <i className="muestra" style={{ background: c.color }} aria-hidden />
+                <span>{c.texto}</span>
+              </label>
+            ))}
+          </fieldset>
+          <PuntosPropios puntos={puntos} onCambio={setPuntos} visibles={verPuntos} onVisibles={setVerPuntos} />
+          <fieldset className="geo__capas">
             <legend>Territorio y patrones</legend>
             {NOMBRES_EXTRAS.map((c) => (
               <label key={c.clave} className="interruptor">
@@ -120,6 +142,7 @@ export function EnVivo() {
             etiquetas={{ barrios: extras.barrios, uvs: extras.uvs }}
             marcas={marcas}
             colorBarrios={extras.colores}
+            puntosInteres={verPuntos ? puntos : []}
           />
         </section>
 

@@ -7,9 +7,9 @@ import {
   setWorkerUrl,
   type GeoJSONSource,
   type MapLayerMouseEvent,
-  type StyleSpecification,
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { agregarAvenidas, agregarLugares, calleEn, LUGARES, primeraCapaDeTexto, resolverEstilo, type TipoLugar } from "./base";
 import {
   ESTADOS,
   ESTADOS_MOVIL,
@@ -22,6 +22,7 @@ import {
   BARRIOS,
   centroideUV,
   type Movil,
+  type PuntoInteres,
   type Procedimiento,
   type Punto,
 } from "@plataforma/datos";
@@ -29,23 +30,18 @@ import {
 /**
  * Motor de mapas único de la plataforma (MapLibre GL).
  *
- * Mapa base: si existe VITE_MAPA_ESTILO_URL (proveedor contratado, clave restringida por dominio) se usa ese estilo.
- * Sin proveedor, el mapa muestra solo los límites de las unidades vecinales sobre fondo claro: sirve para la demo
- * y no depende de servidores gratuitos de terceros.
+ * Mapa base con calles: ver base.ts (OpenFreeMap por defecto, configurable con VITE_MAPA_ESTILO_URL).
+ * Si el mapa base no carga, se muestran solo las unidades vecinales sobre fondo claro y todo sigue funcionando.
  */
 
 export function configurarWorkerMapa(url: string) {
   setWorkerUrl(url);
 }
 
-const ESTILO_URL: string = (import.meta.env?.VITE_MAPA_ESTILO_URL as string | undefined)?.trim() ?? "";
-export const TIENE_MAPA_BASE = ESTILO_URL.length > 0;
+const TIPOS_PUNTO_LETRA: Record<PuntoInteres["tipo"], string> = { municipal: "M", salud: "S", bomberos: "B", policia: "C", educacion: "E", seguridad: "P", otro: "•" };
 
-const ESTILO_DEMO: StyleSpecification = {
-  version: 8,
-  sources: {},
-  layers: [{ id: "fondo", type: "background", paint: { "background-color": "#F4F6FA" } }],
-};
+/** Zoom desde el cual se ocultan los nombres de barrio y aparecen los números de UV. */
+const ZOOM_CERCA = 14.3;
 
 export interface Capas {
   unidadesVecinales: boolean;
@@ -53,9 +49,25 @@ export interface Capas {
   moviles: boolean;
   calor: boolean;
   recorridos: boolean;
+  avenidas: boolean;
+  salud: boolean;
+  bomberos: boolean;
+  policia: boolean;
+  municipal: boolean;
 }
 
-export const CAPAS_INICIALES: Capas = { unidadesVecinales: true, procedimientos: true, moviles: true, calor: false, recorridos: true };
+export const CAPAS_INICIALES: Capas = {
+  unidadesVecinales: true,
+  procedimientos: true,
+  moviles: true,
+  calor: false,
+  recorridos: true,
+  avenidas: false,
+  salud: false,
+  bomberos: false,
+  policia: false,
+  municipal: false,
+};
 
 export type Seleccion = { tipo: "procedimiento" | "movil"; id: string } | null;
 
@@ -110,6 +122,10 @@ interface PropsMapa {
   onMarca?: (id: string) => void;
   /** Pinta cada barrio con su color claro (por defecto sí, salvo que haya mapa coroplético). */
   colorBarrios?: boolean;
+  /** Puntos de interés propios del municipio (edificios municipales, sedes, etc.). */
+  puntosInteres?: PuntoInteres[];
+  /** Nombre de la calle más cercana al punto tocado (solo con mapa base). */
+  onCalle?: (nombre: string | null) => void;
 }
 
 function fcProcedimientos(procs: Procedimiento[], seleccionId: string | null) {
@@ -200,47 +216,70 @@ export function Mapa({
   marcas = [],
   onMarca,
   colorBarrios = true,
+  puntosInteres = [],
+  onCalle,
 }: PropsMapa) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapa = useRef<MapaGL | null>(null);
   const pin = useRef<Marker | null>(null);
   const [listo, setListo] = useState(false);
   const [fallo, setFallo] = useState("");
+  const [conBase, setConBase] = useState(false);
+  const [cerca, setCerca] = useState(false);
   const capas = { ...CAPAS_INICIALES, ...capasParciales };
 
   // Callbacks siempre actuales sin recrear el mapa.
-  const cb = useRef({ onSeleccionar, onClicMapa, onMoverMarcador, onMarca });
-  cb.current = { onSeleccionar, onClicMapa, onMoverMarcador, onMarca };
+  const cb = useRef({ onSeleccionar, onClicMapa, onMoverMarcador, onMarca, onCalle });
+  cb.current = { onSeleccionar, onClicMapa, onMoverMarcador, onMarca, onCalle };
+  const puntosHtml = useRef<Marker[]>([]);
   const marcadoresHtml = useRef<Marker[]>([]);
   const etiquetasHtml = useRef<Marker[]>([]);
 
   useEffect(() => {
     if (!contenedor.current) return;
-    let m: MapaGL;
+    let cancelado = false;
+    let m: MapaGL | null = null;
+    let obs: ResizeObserver | null = null;
+    const popup = new Popup({ closeButton: false, closeOnClick: false, offset: 10, className: "mapa-popup" });
+    void resolverEstilo().then((estilo) => {
+    if (cancelado || !contenedor.current) return;
+    const base = typeof estilo === "string";
     try {
       m = new MapaGL({
         container: contenedor.current,
-        style: ESTILO_URL || ESTILO_DEMO,
+        style: estilo,
         bounds: [
           [LIMITES_COMUNA.minLng, LIMITES_COMUNA.minLat],
           [LIMITES_COMUNA.maxLng, LIMITES_COMUNA.maxLat],
         ],
         fitBoundsOptions: { padding: compacto ? 16 : 40 },
-        attributionControl: TIENE_MAPA_BASE ? {} : false,
+        attributionControl: base ? { compact: true } : false,
+        maxBounds: [
+          [LIMITES_COMUNA.minLng - 0.06, LIMITES_COMUNA.minLat - 0.05],
+          [LIMITES_COMUNA.maxLng + 0.06, LIMITES_COMUNA.maxLat + 0.05],
+        ],
         dragRotate: false,
       });
     } catch (e) {
       setFallo(e instanceof Error ? e.message : "No se pudo iniciar el mapa");
       return;
     }
-    mapa.current = m;
-    m.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
-    const popup = new Popup({ closeButton: false, closeOnClick: false, offset: 10, className: "mapa-popup" });
+    const mm = m as MapaGL;
+    mapa.current = mm;
+    setConBase(base);
+    mm.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
+    const actualizarCerca = () => setCerca(mm.getZoom() >= ZOOM_CERCA);
+    mm.on("zoomend", actualizarCerca);
 
-    m.on("load", () => {
+    mm.on("load", () => {
+      const m = mm;
+      const antesDeTextos = base ? primeraCapaDeTexto(m) : undefined;
+      if (base) agregarAvenidas(m, antesDeTextos);
       m.addSource("uv", { type: "geojson", data: UNIDADES_VECINALES as unknown as Parameters<GeoJSONSource["setData"]>[0] });
-      m.addLayer({ id: "uv-relleno", type: "fill", source: "uv", paint: { "fill-color": "#FFFFFF", "fill-opacity": TIENE_MAPA_BASE ? 0.05 : 1 } });
-      m.addLayer({ id: "uv-borde", type: "line", source: "uv", paint: { "line-color": "#98A2B3", "line-width": 1 } });
+      // Con calles, las UV van semitransparentes y debajo de los nombres de calles para no estorbar la lectura.
+      m.addLayer({ id: "uv-relleno", type: "fill", source: "uv", paint: { "fill-color": "#FFFFFF", "fill-opacity": base ? 0.05 : 1 } }, antesDeTextos);
+      m.addLayer({ id: "uv-borde", type: "line", source: "uv", paint: { "line-color": base ? "#667085" : "#98A2B3", "line-width": base ? 1.2 : 1, "line-opacity": base ? 0.7 : 1 } }, antesDeTextos);
+      if (base) agregarLugares(m);
 
       m.addSource("calor", { type: "geojson", data: fcCalor([]) });
       m.addLayer({
@@ -311,19 +350,22 @@ export function Mapa({
       m.on("click", (e) => {
         const tocados = m.queryRenderedFeatures(e.point, { layers: ["procedimientos", "moviles"] });
         if (tocados.length) return;
+        if (base) cb.current.onCalle?.(calleEn(m, e.point.x, e.point.y));
         cb.current.onClicMapa?.({ lat: e.lngLat.lat, lng: e.lngLat.lng });
         if (!cb.current.onClicMapa) cb.current.onSeleccionar?.(null);
       });
+      actualizarCerca();
       setListo(true);
     });
-    m.on("error", (e) => console.warn("[mapa]", e.error?.message));
-
-    const obs = new ResizeObserver(() => m.resize());
+    mm.on("error", (e) => console.warn("[mapa]", e.error?.message));
+    obs = new ResizeObserver(() => mm.resize());
     obs.observe(contenedor.current);
+    });
     return () => {
-      obs.disconnect();
+      cancelado = true;
+      obs?.disconnect();
       popup.remove();
-      m.remove();
+      (m as MapaGL | null)?.remove();
       mapa.current = null;
       setListo(false);
     };
@@ -353,10 +395,10 @@ export function Mapa({
         for (const [b, c] of Object.entries(COLORES_BARRIO)) expr.push(b, c);
         expr.push("#FFFFFF");
         m.setPaintProperty("uv-relleno", "fill-color", expr as never);
-        m.setPaintProperty("uv-relleno", "fill-opacity", TIENE_MAPA_BASE ? 0.45 : 1);
+        m.setPaintProperty("uv-relleno", "fill-opacity", conBase ? 0.28 : 1);
       } else {
         m.setPaintProperty("uv-relleno", "fill-color", "#FFFFFF");
-        m.setPaintProperty("uv-relleno", "fill-opacity", TIENE_MAPA_BASE ? 0.05 : 1);
+        m.setPaintProperty("uv-relleno", "fill-opacity", conBase ? 0.05 : 1);
       }
       return;
     }
@@ -364,8 +406,8 @@ export function Mapa({
     for (const [uv, v] of Object.entries(coropleta)) expr.push(Number(uv), colorSecuencial(v));
     expr.push("#FFFFFF");
     m.setPaintProperty("uv-relleno", "fill-color", expr as never);
-    m.setPaintProperty("uv-relleno", "fill-opacity", TIENE_MAPA_BASE ? 0.7 : 1);
-  }, [listo, coropleta, colorBarrios]);
+    m.setPaintProperty("uv-relleno", "fill-opacity", conBase ? 0.55 : 1);
+  }, [listo, coropleta, colorBarrios, conBase]);
 
   // Nombres de barrios y números de UV (marcadores HTML: no dependen de fuentes del proveedor de mapas).
   const conBarrios = !!etiquetas?.barrios;
@@ -375,7 +417,7 @@ export function Mapa({
     if (!m || !listo) return;
     etiquetasHtml.current.forEach((x) => x.remove());
     etiquetasHtml.current = [];
-    if (conUVs) {
+    if (conUVs || conBarrios) {
       for (const f of UNIDADES_VECINALES.features) {
         const c = centroideUV(f.properties.uv);
         if (!c) continue;
@@ -428,7 +470,29 @@ export function Mapa({
     m.setLayoutProperty("moviles", "visibility", vis(capas.moviles));
     m.setLayoutProperty("calor", "visibility", vis(capas.calor));
     m.setLayoutProperty("recorridos", "visibility", vis(capas.recorridos));
-  }, [listo, capas.unidadesVecinales, capas.procedimientos, capas.moviles, capas.calor, capas.recorridos]);
+    if (m.getLayer("avenidas")) m.setLayoutProperty("avenidas", "visibility", vis(capas.avenidas));
+    for (const t of Object.keys(LUGARES) as TipoLugar[]) {
+      if (!m.getLayer(`lugar-${t}`)) continue;
+      m.setLayoutProperty(`lugar-${t}`, "visibility", vis(capas[t]));
+      m.setLayoutProperty(`lugar-${t}-texto`, "visibility", vis(capas[t]));
+    }
+  }, [listo, capas.unidadesVecinales, capas.procedimientos, capas.moviles, capas.calor, capas.recorridos, capas.avenidas, capas.salud, capas.bomberos, capas.policia, capas.municipal]);
+
+  // Puntos de interés propios del municipio.
+  const firmaPuntos = puntosInteres.map((p) => `${p.id}:${p.ubicacion.lat}:${p.ubicacion.lng}`).join("|");
+  useEffect(() => {
+    const m = mapa.current;
+    if (!m || !listo) return;
+    puntosHtml.current.forEach((x) => x.remove());
+    puntosHtml.current = puntosInteres.map((p) => {
+      const el = document.createElement("span");
+      el.className = `mapa-poi mapa-poi--${p.tipo}`;
+      el.textContent = TIPOS_PUNTO_LETRA[p.tipo];
+      el.title = `${p.nombre}${p.direccion ? ` · ${p.direccion}` : ""}`;
+      return new Marker({ element: el }).setLngLat([p.ubicacion.lng, p.ubicacion.lat]).addTo(m);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listo, firmaPuntos]);
 
   // Marcador arrastrable para la ubicación exacta.
   useEffect(() => {
@@ -457,10 +521,10 @@ export function Mapa({
   }, [listo, enfocar]);
 
   return (
-    <div className={`mapa ${className ?? ""}`}>
+    <div className={`mapa ${cerca ? "mapa--cerca" : ""} ${etiquetas?.uvs ? "mapa--uv-siempre" : ""} ${className ?? ""}`}>
       <div ref={contenedor} className="mapa__lienzo" />
       {fallo && <div className="mapa__aviso">No se pudo mostrar el mapa en este equipo ({fallo}).</div>}
-      {!TIENE_MAPA_BASE && !fallo && !compacto && <div className="mapa__base">Sin mapa base: se muestran los límites de las unidades vecinales (demo)</div>}
+      {listo && !conBase && !fallo && !compacto && <div className="mapa__base">Sin calles: no se pudo cargar el mapa base; se muestran solo las unidades vecinales</div>}
     </div>
   );
 }

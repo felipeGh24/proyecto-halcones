@@ -8,3 +8,4 @@ export * from "./auth";
 export * from "./cliente";
 export * from "./indicadores";
 export * from "./patrones";
+export * from "./puntos-interes";

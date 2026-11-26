@@ -4,6 +4,23 @@ Cada sesión agrega una entrada arriba: fecha, sistema, qué se hizo, qué qued�
 
 ---
 
+## 2026-11-26 (3) · Mapa con calles, lugares y etiquetas según el acercamiento
+
+**Hecho**
+
+- Mapa base con calles: OpenFreeMap (estilo claro «positron», datos de OpenStreetMap, sin clave). Las unidades vecinales quedan semitransparentes y debajo de los nombres de calles. Si el mapa base no carga, el sistema sigue funcionando sin calles. Se cambia con `VITE_MAPA_ESTILO_URL` (o `ninguno`).
+- Etiquetas según el acercamiento: lejos se ven los nombres de los barrios; al acercar (zoom 14,3) desaparecen y aparecen los números de las UV.
+- Capas de lugares desde OpenStreetMap: avenidas principales, centros de salud (SAPU, CESFAM, hospitales), bomberos, Carabineros y PDI, edificios municipales.
+- Puntos propios del municipio: carga de planilla CSV (nombre; tipo; dirección; latitud; longitud) con plantilla descargable y aviso de filas sin coordenadas. En la demo quedan en el navegador.
+- Al marcar el punto de un procedimiento se muestra la calle más cercana y, si la dirección está vacía, se propone.
+
+**Pendiente o no verificado**
+
+- En el entorno de trabajo el servidor de mapas está bloqueado: se probó el modo sin calles. Revisar en un navegador normal que carguen calles, avenidas y lugares.
+- OpenFreeMap es gratuito y «tal cual», sin garantía de servicio. Para vender, conviene un proveedor con contrato o servidor de mapas propio.
+- Búsqueda de direcciones escribiendo la calle: requiere un servicio de geocodificación en el servidor.
+- Los lugares de OpenStreetMap pueden estar incompletos; por eso existe la carga de puntos propios.
+
 ## 2026-11-26 (2) · Motor de patrones, más gráficos y capas de territorio
 
 **Hecho**

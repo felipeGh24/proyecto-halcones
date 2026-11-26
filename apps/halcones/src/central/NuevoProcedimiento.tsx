@@ -20,6 +20,7 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
   const [punto, setPunto] = useState<Punto | null>(null);
   const [enfoque, setEnfoque] = useState<Punto | null>(null);
   const [errores, setErrores] = useState<Record<string, string>>({});
+  const [calle, setCalle] = useState<string | null>(null);
   const uv = punto ? unidadVecinalDe(punto) : null;
   const historial = punto ? historialCercano(procedimientos, punto) : null;
   const masCercano = punto ? movilesCercanos(moviles, punto, 1)[0] : undefined;
@@ -116,13 +117,26 @@ export function NuevoProcedimiento({ onCerrar, onCreado }: { onCerrar: () => voi
         </div>
         <div className="nuevo__mapa">
           <div className={`nuevo__lienzo ${errores.punto ? "nuevo__lienzo--error" : ""}`}>
-            <Mapa compacto moviles={moviles} marcador={punto} onMoverMarcador={setPunto} onClicMapa={setPunto} enfocar={enfoque} capas={{ procedimientos: false, recorridos: false }} />
+            <Mapa
+              compacto
+              moviles={moviles}
+              marcador={punto}
+              onMoverMarcador={setPunto}
+              onClicMapa={setPunto}
+              onCalle={(c) => {
+                setCalle(c);
+                if (c && !direccion.trim()) setDireccion(`${c} (completar número)`);
+              }}
+              enfocar={enfoque}
+              etiquetas={{ barrios: true }}
+              capas={{ procedimientos: false, recorridos: false }}
+            />
           </div>
           <p className={errores.punto ? "ui-campo__error" : "pequeno texto-2"}>
             {errores.punto
               ? errores.punto
               : punto
-                ? `Punto: ${uv ? `${uv.nombre} · ${uv.barrio}` : "fuera de la comuna"} · ${punto.lat.toFixed(5)}, ${punto.lng.toFixed(5)} · arrastra el marcador para corregir`
+                ? `Punto: ${calle ? `cerca de ${calle} · ` : ""}${uv ? `${uv.nombre} · ${uv.barrio}` : "fuera de la comuna"} · ${punto.lat.toFixed(5)}, ${punto.lng.toFixed(5)} · arrastra el marcador para corregir`
                 : "Haz clic en el mapa para fijar el punto exacto."}
           </p>
           {historial && (

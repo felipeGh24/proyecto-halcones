@@ -20,3 +20,15 @@
 .mapa-escala__barra { height: 10px; border-radius: 5px; background: linear-gradient(90deg, rgb(239, 244, 255), rgb(23, 37, 84)); }
 .mapa-escala__extremos { display: flex; justify-content: space-between; }
 .mapa-leyenda i.cuadro { border-radius: 3px; border: 1px solid #98A2B3; box-shadow: none; }
+/* Etiquetas según el acercamiento: lejos, nombres de barrio; cerca, números de UV. */
+.mapa--cerca .mapa-etiqueta-barrio { display: none; }
+.mapa:not(.mapa--cerca):not(.mapa--uv-siempre) .mapa-etiqueta-uv { display: none; }
+.mapa-poi { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font: 700 11px var(--fuente); color: #fff; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(16, 24, 40, 0.3); cursor: default; }
+.mapa-poi--municipal { background: #0F766E; }
+.mapa-poi--salud { background: #6941C6; }
+.mapa-poi--bomberos { background: #C11574; }
+.mapa-poi--policia { background: #155B75; }
+.mapa-poi--educacion { background: #3538CD; }
+.mapa-poi--seguridad { background: #1D4ED8; }
+.mapa-poi--otro { background: #475467; }
+.maplibregl-ctrl-attrib { font-size: 10px; }
