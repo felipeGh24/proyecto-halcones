@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROLES, puedeIniciarComo, useDatos, type ModoHalcones } from "@plataforma/datos";
-import { Boton, EmblemaHalcon, IlustracionCentral, IlustracionPatrulla, Insignia, useSesion } from "@plataforma/ui";
+import { Boton, LogoHalcones, IlustracionCentral, IlustracionPatrulla, Insignia, useSesion } from "@plataforma/ui";
 
 const OPCIONES: { modo: ModoHalcones; titulo: string; texto: string; ruta: string }[] = [
   { modo: "central", titulo: "Central de Operaciones", texto: "Crear y despachar procedimientos, ver la flota y los reportes.", ruta: "/central" },
@@ -30,7 +30,7 @@ export function ElegirIngreso() {
     <main className="elegir">
       <div className="elegir__caja">
         <header className="elegir__cabeza">
-          <EmblemaHalcon tamano={40} />
+          <LogoHalcones tamano={64} />
           <div>
             <h1>¿Cómo deseas iniciar?</h1>
             <p className="texto-2">

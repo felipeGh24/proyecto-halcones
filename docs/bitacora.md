@@ -205,3 +205,10 @@ Revisión de Halcones con las reglas del plugin UI/UX Pro Max (accesibilidad, ta
 - Procedimiento iniciado en terreno: el patrullero lo crea (clave, dirección desde el GPS), queda a cargo y en procedimiento; la Central lo ve marcado «Iniciado en terreno».
 - Ingreso único: después del login, «¿Cómo deseas iniciar?» Central o Patrullero según el rol (patrullero solo patrulla; operador y jefatura solo Central; supervisor y administrador ambos). Servicios: Móvil, Punto estático u Otro servicio, con cambio durante el turno.
 - Pruebas: 60 unitarias y 14 de pantalla (nuevas: test_terreno, test_elegir).
+
+## 12 · 28-11-2026 — Entrada animada, logo provisorio e ingreso con pantalla al lado
+
+- Logo provisorio «halcón cazando» (peregrino en picada con las garras hacia adelante), en `packages/ui/src/Logo.tsx`; se reemplaza solo ese archivo cuando llegue el logo definitivo. Propuestas A–E presentadas al usuario.
+- Entrada animada de Halcones (una vez por sesión, se puede saltar, no aparece con «reducir movimiento»): anillo que se dibuja, halcón en picada, nombre y aviso «Modo demostración».
+- Ingreso de Halcones en pantalla dividida: marca «Sistema HALCONES», vista de ejemplo de la Central y del aviso al celular del patrullero, cinta amarilla «MODO DEMOSTRACIÓN»; en el celular, logo y nombre arriba del formulario.
+- «¿Cómo deseas iniciar?» usa el logo nuevo. Pruebas: 60 unitarias y 14 de pantalla.

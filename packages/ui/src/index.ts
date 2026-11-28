@@ -9,3 +9,5 @@ export * from "./adjuntos";
 export * from "./direccion";
 export * from "./Ilustraciones";
 export * from "./compartir";
+export * from "./Logo";
+export * from "./Entrada";

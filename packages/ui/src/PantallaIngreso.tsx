@@ -5,6 +5,46 @@ import { Boton, Campo, Insignia } from "./componentes";
 import { EmblemaHalcon, IlustracionCentralPatrulla } from "./Ilustraciones";
 import { Icono } from "./Icono";
 import { useSesion } from "./sesion";
+import { LogoHalcones } from "./Logo";
+import { debeMostrarEntrada, EntradaAnimada } from "./Entrada";
+
+/** «Pantalla al lado» del ingreso de Halcones: la Central y el celular del patrullero, con datos de ejemplo. */
+function VistaHalcones() {
+  return (
+    <div className="vista-h" aria-hidden="true">
+      <div className="vista-h__pantalla">
+        <div className="vista-h__barra">
+          <i /> <i /> <i /> <span>Central de Operaciones</span>
+        </div>
+        <div className="vista-h__cuerpo">
+          <div className="vista-h__kpis">
+            <div><b>14</b><span>Móviles en turno</span></div>
+            <div><b>6</b><span>Procedimientos activos</span></div>
+            <div><b>7:40</b><span>Llegada promedio</span></div>
+          </div>
+          <div className="vista-h__mapa">
+            <span className="vista-h__punto vista-h__punto--1" />
+            <span className="vista-h__punto vista-h__punto--2" />
+            <span className="vista-h__punto vista-h__punto--3" />
+            <span className="vista-h__alerta" />
+          </div>
+          <ul className="vista-h__cola">
+            <li><em className="rojo" />67 · Robo<small>Independencia 3499</small></li>
+            <li><em className="ambar" />2 · Riña<small>Pasarela Mall</small></li>
+            <li><em className="verde" />Ronda preventiva<small>UV 09</small></li>
+          </ul>
+        </div>
+      </div>
+      <div className="vista-h__celular">
+        <div className="vista-h__aviso">
+          <strong>Te despacharon</strong>
+          <span>67 · Robo · a 600 m</span>
+          <b>Entendido</b>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Pantalla de ingreso común a los tres sistemas.
@@ -20,6 +60,8 @@ export function PantallaIngreso({ puntos, destino }: { puntos: string[]; destino
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
   const info = SISTEMAS[sistema];
+  const esHalcones = sistema === "halcones";
+  const [entrada, setEntrada] = useState(() => esHalcones && debeMostrarEntrada());
 
   async function enviar(e: FormEvent) {
     e.preventDefault();
@@ -41,7 +83,30 @@ export function PantallaIngreso({ puntos, destino }: { puntos: string[]; destino
   }
 
   return (
-    <main className="ui-ingreso">
+    <main className={`ui-ingreso${esHalcones ? " ui-ingreso--halcones" : ""}`}>
+      {entrada && <EntradaAnimada onFin={() => setEntrada(false)} />}
+      {esHalcones ? (
+        <aside className="ui-ingreso__lado ingreso-h">
+          <div className="ingreso-h__marca">
+            <LogoHalcones tamano={76} />
+            <div>
+              <p className="ingreso-h__sistema">Sistema</p>
+              <p className="ingreso-h__nombre">HALCONES</p>
+              <p className="ingreso-h__org">Seguridad Pública · Municipalidad de Conchalí</p>
+            </div>
+          </div>
+          <VistaHalcones />
+          <ul className="ingreso-h__puntos">
+            {puntos.slice(0, 3).map((p) => (
+              <li key={p}>
+                <Icono nombre="check" />
+                {p}
+              </li>
+            ))}
+          </ul>
+          <p className="pequeno ui-ingreso__pie">Plataforma integrada: Halcones · Georreferenciado · Análisis de eventos</p>
+        </aside>
+      ) : (
       <aside className="ui-ingreso__lado">
         <div className="ui-ingreso__marca">
           <span className="ui-marco__logo">
@@ -71,8 +136,21 @@ export function PantallaIngreso({ puntos, destino }: { puntos: string[]; destino
         </div>
         <p className="pequeno ui-ingreso__pie">Plataforma integrada: Halcones · Georreferenciado · Análisis de eventos</p>
       </aside>
+      )}
 
       <section className="ui-ingreso__form">
+        {esHalcones && (
+          <div className="ingreso-h__movil">
+            <LogoHalcones tamano={60} />
+            <div>
+              <strong>HALCONES</strong>
+              <span>Seguridad Pública · Conchalí</span>
+            </div>
+          </div>
+        )}
+        <div className="ingreso-demo-cinta" role="note">
+          <Icono nombre="alerta" tamano={16} /> MODO DEMOSTRACIÓN · datos ficticios, solo en este navegador
+        </div>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
             <h2 style={{ fontSize: 24 }}>Ingresar</h2>

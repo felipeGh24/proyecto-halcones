@@ -47,7 +47,7 @@ class Pagina:
 
     def entrar(self, correo, sistema="halcones"):
         self.ir(f"/{sistema}/ingreso", 200)
-        self.page.evaluate("localStorage.removeItem('plataforma.sesion.v1'); sessionStorage.clear()")
+        self.page.evaluate("localStorage.removeItem('plataforma.sesion.v1'); sessionStorage.clear(); sessionStorage.setItem('plataforma.entrada.v1', '1')")
         self.ir(f"/{sistema}/ingreso", 400)
         self.page.fill("#correo", correo)
         self.page.fill("#contrasena", CONTRASENA)

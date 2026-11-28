@@ -5,7 +5,7 @@ from conftest import CONTRASENA
 def _ingresar(pagina, correo):
     p = pagina.page
     pagina.ir("/halcones/ingreso", 200)
-    p.evaluate("localStorage.removeItem('plataforma.sesion.v1'); sessionStorage.clear()")
+    p.evaluate("localStorage.removeItem('plataforma.sesion.v1'); sessionStorage.clear(); sessionStorage.setItem('plataforma.entrada.v1', '1')")
     pagina.ir("/halcones/ingreso", 400)
     p.fill("#correo", correo)
     p.fill("#contrasena", CONTRASENA)
