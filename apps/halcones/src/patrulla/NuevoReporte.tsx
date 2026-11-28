@@ -4,6 +4,9 @@ import {
   esActivo,
   obtenerClave,
   obtenerCliente,
+  OBSERVACIONES_FRECUENTES,
+  textoReporte,
+  type Reporte,
   TIPOS_REPORTE,
   unidadVecinalDe,
   useDatos,
@@ -14,10 +17,13 @@ import {
 } from "@plataforma/datos";
 import { avisar, Boton, Campo, EntradaDireccion, Modal, Segmentos, SelectorAdjuntos, useUsuario } from "@plataforma/ui";
 import { participo, posicionActual, type TurnoActual } from "./turnoActual";
+import { TextoParaCompartir } from "./ChecklistMovil";
 
 /**
  * Reporte a la Central: hora y número de halcón automáticos; barrio y unidad vecinal se calculan desde la ubicación;
  * dirección, tipo (patrullaje preventivo, procedimiento, punto estático), observaciones y fotos o videos.
+ * Al enviarlo, entrega el texto con el formato oficial del equipo (PATRULLAJE PREVENTIVO, SERVICIO DE PUNTO ESTATICO,
+ * PROCEDIMIENTO) para copiarlo o compartirlo.
  */
 export function NuevoReporte({ turno, procedimientoInicial, onCerrar }: { turno: TurnoActual; procedimientoInicial?: Procedimiento; onCerrar: () => void }) {
   const usuario = useUsuario();
@@ -27,9 +33,11 @@ export function NuevoReporte({ turno, procedimientoInicial, onCerrar }: { turno:
   const [direccion, setDireccion] = useState(procedimientoInicial?.direccion ?? (turno.puesto ? turno.puesto.lugar : ""));
   const [ubicacion, setUbicacion] = useState<Punto | null>(procedimientoInicial?.ubicacion ?? turno.puesto?.ubicacion ?? null);
   const [gps, setGps] = useState<"buscando" | "ok" | "sin">("buscando");
-  const [observaciones, setObservaciones] = useState("");
+  // Si viene de un procedimiento, el reporte parte con su resultado o su descripción.
+  const [observaciones, setObservaciones] = useState(procedimientoInicial?.resultado ?? "");
   const [adjuntos, setAdjuntos] = useState<Adjunto[]>([]);
   const ahora = useMemo(() => new Date(), []);
+  const [enviado, setEnviado] = useState<Reporte | null>(null);
 
   // Procedimientos de este turno que se pueden adjuntar al reporte.
   const mios = procedimientos.filter((p) => participo(p, turno.unidadId) && new Date(p.creadoEn) >= new Date(turno.iniciadoEn)).reverse();
@@ -64,8 +72,26 @@ export function NuevoReporte({ turno, procedimientoInicial, onCerrar }: { turno:
       usuario,
     );
     avisar(`Reporte ${r.folio} enviado a la Central`);
-    onCerrar();
+    setEnviado(r);
   }
+
+  if (enviado)
+    return (
+      <Modal
+        titulo={`Reporte ${enviado.folio} enviado`}
+        subtitulo="La Central ya lo tiene. Si el equipo también lo comparte por el grupo, copia el texto."
+        onCerrar={onCerrar}
+        pie={
+          <Boton variante="primario" onClick={onCerrar}>
+            Listo
+          </Boton>
+        }
+      >
+        <TextoParaCompartir titulo="Reporte con el formato del equipo" texto={textoReporte(enviado)} />
+      </Modal>
+    );
+
+  const vistaPrevia = textoReporte({ tipo, creadoEn: ahora.toISOString(), halcon: turno.halcon, patrullero: turno.patrullero, unidadVecinal: uv?.uv ?? null, barrio: uv?.barrio ?? null, direccion, observaciones });
 
   return (
     <Modal
@@ -91,7 +117,20 @@ export function NuevoReporte({ turno, procedimientoInicial, onCerrar }: { turno:
             opciones={(Object.keys(TIPOS_REPORTE) as TipoReporte[]).map((t) => ({ valor: t, texto: TIPOS_REPORTE[t] }))}
           />
         </div>
-        {tipo === "procedimiento" && (
+        {tipo === "procedimiento" && procedimientoInicial && procId === procedimientoInicial.id && (
+          <section className="proc-reporte" aria-label="Procedimiento del reporte">
+            <span className="pequeno texto-3">
+              {procedimientoInicial.folio}
+              {procedimientoInicial.origen === "terreno" ? " · iniciado en terreno" : " · despachado por la Central"}
+            </span>
+            <strong>
+              {procedimientoInicial.claveNumero} · {obtenerClave(procedimientoInicial.claveNumero)?.nombre}
+            </strong>
+            <span>{procedimientoInicial.direccion}</span>
+            <span className="pequeno texto-2">Los datos del procedimiento ya están completos: agrega tus observaciones, fotos o videos.</span>
+          </section>
+        )}
+        {tipo === "procedimiento" && !(procedimientoInicial && procId === procedimientoInicial.id) && (
           <Campo etiqueta="Procedimiento que te despacharon" htmlFor="proc" ayuda={mios.length ? undefined : "No tienes procedimientos en este turno; describe lo ocurrido en observaciones."}>
             <select
               id="proc"
@@ -142,7 +181,18 @@ export function NuevoReporte({ turno, procedimientoInicial, onCerrar }: { turno:
         <Campo etiqueta="Observaciones" htmlFor="obs-rep">
           <textarea id="obs-rep" className="ui-entrada" value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Qué viste o hiciste" />
         </Campo>
+        <div className="frases" aria-label="Frases frecuentes">
+          {OBSERVACIONES_FRECUENTES[tipo].map((f) => (
+            <button key={f} type="button" className="ui-boton ui-boton--secundario frases__boton" onClick={() => setObservaciones(f)}>
+              {f.length > 42 ? `${f.slice(0, 40)}…` : f}
+            </button>
+          ))}
+        </div>
         <SelectorAdjuntos adjuntos={adjuntos} onCambio={setAdjuntos} />
+        <details className="vista-previa">
+          <summary>Ver cómo queda el reporte</summary>
+          <pre className="texto-compartir__texto">{vistaPrevia}</pre>
+        </details>
       </div>
     </Modal>
   );

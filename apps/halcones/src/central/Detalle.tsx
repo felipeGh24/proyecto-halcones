@@ -89,6 +89,7 @@ export function Detalle({ procedimiento: p, moviles, procedimientos }: { procedi
           <Insignia tono={activo ? (p.estado === "recibido" ? "peligro" : "info") : "neutro"} punto>
             {ESTADOS[p.estado].etiqueta}
           </Insignia>
+          {p.origen === "terreno" && <Insignia tono="alerta">Iniciado en terreno</Insignia>}
           <span className="pequeno texto-3 num" style={{ marginLeft: "auto" }}>
             {p.folio}
           </span>

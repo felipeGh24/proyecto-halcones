@@ -26,7 +26,8 @@ const INICIALES: { id: string; nombre: string; direccion: string; ubicarCon?: st
   { id: "pf-metro-vivaceta", nombre: "Metro Vivaceta", direccion: "Av. Independencia con Av. Los Zapadores" },
   { id: "pf-metro-cardenal-caro", nombre: "Metro Cardenal Caro", direccion: "Av. Independencia con Av. Cardenal José María Caro" },
   { id: "pf-paso-bajo-nivel", nombre: "Paso Bajo Nivel", direccion: "" },
-  { id: "pf-pasarela", nombre: "Pasarela", direccion: "" },
+  // Informado el 28-11-2026: «Módulo de Prevención Pasarela Mall», UV 10, Barrio Sur. Falta marcar el punto exacto.
+  { id: "pf-pasarela", nombre: "Pasarela Mall (Módulo de Prevención)", direccion: "Módulo de Prevención Pasarela Mall · UV 10, Barrio Sur" },
 ];
 
 const CLAVE = "plataforma.puntos-fijos.v1";

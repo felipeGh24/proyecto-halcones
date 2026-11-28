@@ -49,7 +49,15 @@ export function Bitacora() {
                       <td className="num">{fechaHora(t.iniciadoEn)}</td>
                       <td className="derecha num">{t.kmFinal != null && t.kmInicial != null ? (t.kmFinal - t.kmInicial).toLocaleString("es-CL") : "—"}</td>
                       <td>{t.combustibleFinal ?? "—"}</td>
-                      <td className="pequeno">{[...t.novedadesChecklist, t.observaciones].filter(Boolean).join(" · ") || "Sin novedades"}</td>
+                      <td className="pequeno">
+                        {[...t.novedadesChecklist, t.observaciones].filter(Boolean).join(" · ") || "Sin novedades"}
+                        {t.textoChecklist && (
+                          <details className="bitacora__checklist">
+                            <summary>Checklist de término{t.ppu ? ` · ${t.ppu}` : ""}</summary>
+                            <pre className="texto-compartir__texto">{t.textoChecklist}</pre>
+                          </details>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

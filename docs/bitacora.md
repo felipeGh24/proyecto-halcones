@@ -196,3 +196,12 @@ Revisión de Halcones con las reglas del plugin UI/UX Pro Max (accesibilidad, ta
 - **Tema «Marino vivo»** (paleta del plugin UI/UX Pro Max, perfil gobierno/servicio público): barra lateral marino, acento cian, fondo azulado, botones con degradé, indicadores con íconos de color. Ilustraciones SVG propias: emblema del halcón, ciudad con Central y móvil (ingreso), móvil de seguridad (app del patrullero), radar «todo en orden» (cola vacía). El semáforo sigue reservado para prioridades.
 - **Pruebas**: 54 de datos (nuevas: callejero, puntos fijos, orden de flota) y 12 de navegador; axe-core sin fallas en ingreso, Central, nuevo procedimiento y patrullero. `test_varias_unidades` usa ahora el punto fijo Metro Cardenal Caro (el de Metro Conchalí queda más cerca que el móvil y pasa a estar a cargo, que es lo correcto).
 - **Pendiente**: clave de Google Maps del municipio; ubicar Paso Bajo Nivel, Pasarela, SAPU Bachelet, 5ª Comisaría y bomberos; verificar en terreno las ubicaciones «calculadas»; actualizar el plan maestro con el cambio de paleta y el uso de Google Maps.
+
+## 11 · 28-11-2026 — Formatos oficiales, procedimientos en terreno e ingreso por rol
+
+- Formatos oficiales en la app del patrullero: Patrullaje preventivo, Servicio de punto estático y Procedimiento (FECHA, HORA, HALCÓN, UNIDAD VECINAL, BARRIO, DIRECCIÓN, TIPO DE REPORTE, OBSERVACIONES), con vista previa, copiar y compartir.
+- Checklist del móvil de inicio y término según el formato municipal: PPU, combustible, estado del móvil, urea, equipamiento con contador, conos, aseo interior y novedades. La Central lo ve en la bitácora.
+- Procedimiento de la Central: botón «Completar reporte» con folio, clave y dirección ya puestos; al finalizar se abre solo si falta el reporte. La pestaña Reportes lista los procedimientos sin reporte.
+- Procedimiento iniciado en terreno: el patrullero lo crea (clave, dirección desde el GPS), queda a cargo y en procedimiento; la Central lo ve marcado «Iniciado en terreno».
+- Ingreso único: después del login, «¿Cómo deseas iniciar?» Central o Patrullero según el rol (patrullero solo patrulla; operador y jefatura solo Central; supervisor y administrador ambos). Servicios: Móvil, Punto estático u Otro servicio, con cambio durante el turno.
+- Pruebas: 60 unitarias y 14 de pantalla (nuevas: test_terreno, test_elegir).

@@ -80,6 +80,8 @@ export interface ClienteDatos {
     extra?: { nota?: string; resultado?: string; ubicacion?: Punto },
   ): void;
   pedirApoyo(movilId: string, por: Usuario, ubicacion: Punto): Procedimiento;
+  /** El patrullero se encuentra un procedimiento en la calle: lo crea, queda a cargo y en el lugar; la Central lo ve al instante. */
+  iniciarEnTerreno(d: NuevoProcedimiento, unidadId: string, por: Usuario): Procedimiento;
   /** Corrige clave, dirección, descripción o punto. Queda registrado qué cambió y quién lo cambió. */
   editarProcedimiento(id: string, cambios: CambiosProcedimiento, por: Usuario, motivo?: string): void;
   /** Quien entra a la Central abre su turno (nombre, n.º de halcón, turno). */
@@ -431,6 +433,19 @@ class ClienteDemo implements ClienteDatos {
     this.confirmar();
   }
 
+  iniciarEnTerreno(d: NuevoProcedimiento, unidadId: string, por: Usuario): Procedimiento {
+    const u = this.unidad(unidadId);
+    if (!u) throw new Error("Inicia tu turno antes de crear un procedimiento");
+    if (!u.libre) throw new Error("Ya tienes un procedimiento activo: termínalo antes de iniciar otro");
+    const p = this.crearProcedimiento(d, por);
+    this.actualizarProc(p.id, (x) => ({ ...x, origen: "terreno", eventos: x.eventos.map((e, i) => (i === 0 ? { ...e, nota: `Iniciado en terreno por ${u.nombre} (${u.patrullero})`, ubicacion: d.ubicacion } : e)) }));
+    this.despachar(p.id, unidadId, por);
+    this.confirmarAviso(p.id, unidadId, por);
+    this.cambiarEstado(p.id, "en_el_lugar", por, { nota: "La unidad ya está en el lugar", ubicacion: d.ubicacion });
+    this.cambiarEstado(p.id, "en_procedimiento", por, { ubicacion: d.ubicacion });
+    return this.datos.procedimientos.find((x) => x.id === p.id)!;
+  }
+
   pedirApoyo(movilId: string, por: Usuario, ubicacion: Punto): Procedimiento {
     const movil = this.datos.moviles.find((m) => m.id === movilId);
     this.anotar(por, "apoyo", `Solicitud de apoyo desde ${movil?.nombre ?? por.nombre}`);
@@ -529,6 +544,9 @@ class ClienteDemo implements ClienteDatos {
       unidad: m.nombre,
       iniciadoEn: m.turno.iniciadoEn,
       kmInicial: m.turno.kmInicial,
+      halcon: m.turno.halcon,
+      ppu: m.turno.ppu,
+      combustibleInicial: m.turno.combustible,
       ...cierre,
     });
     this.actualizarMovil(movilId, { estado: "sin_turno", turno: null, procedimientoId: null });
@@ -558,7 +576,7 @@ class ClienteDemo implements ClienteDatos {
     this.confirmar();
   }
 
-  private registrar(r: Omit<RegistroTurno, "id" | "cerradoEn" | "kmFinal" | "combustibleFinal" | "novedadesChecklist" | "observaciones"> & CierreTurno) {
+  private registrar(r: Omit<RegistroTurno, "id" | "cerradoEn" | "kmFinal" | "combustibleFinal" | "novedadesChecklist" | "observaciones" | "checklistTermino" | "textoChecklist"> & CierreTurno) {
     const registro: RegistroTurno = {
       id: `turno-${Date.now()}`,
       cerradoEn: new Date().toISOString(),
@@ -573,6 +591,11 @@ class ClienteDemo implements ClienteDatos {
       unidad: r.unidad,
       iniciadoEn: r.iniciadoEn,
       kmInicial: r.kmInicial,
+      ...(r.halcon ? { halcon: r.halcon } : {}),
+      ...(r.ppu ? { ppu: r.ppu } : {}),
+      ...(r.combustibleInicial ? { combustibleInicial: r.combustibleInicial } : {}),
+      ...(r.checklistTermino ? { checklistTermino: r.checklistTermino } : {}),
+      ...(r.textoChecklist ? { textoChecklist: r.textoChecklist } : {}),
     };
     this.datos.historialTurnos = [registro, ...(this.datos.historialTurnos ?? [])].slice(0, 500);
   }

@@ -54,6 +54,8 @@ export interface Procedimiento {
   /** Todas las unidades enviadas: la que está a cargo y los apoyos (móviles, puntos fijos o a pie). */
   unidades?: UnidadAsignada[];
   resultado?: string;
+  /** «central»: lo creó la Central; «terreno»: lo inició un patrullero en la calle sin despacho previo. */
+  origen?: "central" | "terreno";
   /** ISO 8601 de la recepción (primer evento). */
   creadoEn: string;
   eventos: EventoProcedimiento[];
@@ -95,6 +97,10 @@ export interface TurnoMovil {
   /** Detalle del checklist: descripción y fotos o videos por ítem con observación, más los generales. */
   checklistDetalle?: { item: string; descripcion: string; adjuntos: Adjunto[] }[];
   adjuntosGenerales?: Adjunto[];
+  /** Patente del móvil (PPU) declarada al iniciar turno. */
+  ppu?: string;
+  /** Checklist completo con el formato oficial del municipio. */
+  checklist?: import("./formatos-terreno").ChecklistMovil;
 }
 
 /** Foto o video. El archivo vive en el almacenamiento (en la demo, en el navegador); aquí solo su referencia. */
@@ -205,6 +211,12 @@ export interface RegistroTurno {
   /** Ítems del checklist con novedad al cierre. */
   novedadesChecklist: string[];
   observaciones: string;
+  halcon?: string;
+  ppu?: string;
+  combustibleInicial?: string;
+  /** Checklist de término con el formato oficial y su texto listo para compartir. */
+  checklistTermino?: import("./formatos-terreno").ChecklistMovil;
+  textoChecklist?: string;
 }
 
 export interface CierreTurno {
@@ -212,6 +224,8 @@ export interface CierreTurno {
   combustibleFinal?: string | null;
   novedadesChecklist?: string[];
   observaciones?: string;
+  checklistTermino?: import("./formatos-terreno").ChecklistMovil;
+  textoChecklist?: string;
 }
 
 /* ---------- Registro de acciones (auditoría visible) y turnos de la Central ---------- */

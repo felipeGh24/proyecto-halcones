@@ -5,10 +5,18 @@ import { ComplementarReporte } from "./NuevoReporte";
 import { participo, type TurnoActual } from "./turnoActual";
 
 /** Mis reportes: enviar uno nuevo o añadir información a uno ya enviado. */
-export function PestanaReportes({ turno, onNuevo }: { turno: TurnoActual; onNuevo: () => void }) {
+export function PestanaReportes({ turno, onNuevo, onCompletar }: { turno: TurnoActual; onNuevo: () => void; onCompletar: (procedimientoId: string) => void }) {
   const usuario = useUsuario();
-  const { reportes } = useDatos();
+  const { reportes, procedimientos } = useDatos();
   const mios = reportes.filter((r) => r.usuarioId === usuario.id);
+  // Procedimientos de este turno en que la unidad estuvo a cargo, ya terminados y sin reporte.
+  const pendientes = procedimientos.filter(
+    (p) =>
+      p.estado === "finalizado" &&
+      p.creadoEn >= turno.iniciadoEn &&
+      (p.unidades ?? []).some((u) => u.id === turno.unidadId && u.aCargo) &&
+      !reportes.some((r) => r.procedimientoId === p.id),
+  );
   const [abierto, setAbierto] = useState<string | null>(mios[0]?.id ?? null);
   const [complementar, setComplementar] = useState<Reporte | null>(null);
   const deEsteTurno = mios.filter((r) => r.creadoEn >= turno.iniciadoEn).length;
@@ -26,6 +34,26 @@ export function PestanaReportes({ turno, onNuevo }: { turno: TurnoActual; onNuev
           Nuevo
         </Boton>
       </div>
+      {pendientes.length > 0 && (
+        <section className="pendientes" aria-label="Reportes pendientes">
+          <h2 className="pestana__sub">Falta el reporte de {pendientes.length === 1 ? "este procedimiento" : `${pendientes.length} procedimientos`}</h2>
+          <ul className="lista-patrulla">
+            {pendientes.map((p) => (
+              <li key={p.id} className="pendientes__item">
+                <span>
+                  <strong>
+                    {p.folio} · {p.claveNumero} {obtenerClave(p.claveNumero)?.nombre}
+                  </strong>
+                  <span className="pequeno texto-3"> · {p.direccion}</span>
+                </span>
+                <Boton variante="primario" icono="documento" onClick={() => onCompletar(p.id)}>
+                  Completar reporte
+                </Boton>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {mios.length === 0 ? (
         <Vacio icono="documento" titulo="Aún no envías reportes">
           Usa «Nuevo» para reportar un patrullaje preventivo, un procedimiento o un punto estático, con fotos y videos.

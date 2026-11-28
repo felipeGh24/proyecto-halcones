@@ -333,3 +333,10 @@ select.ui-entrada { padding-right: 32px; appearance: none; background-image: url
 .ui-ingreso__pie { color: #93a9d6; }
 .ui-ingreso__form { background: #fff; }
 .ui-ingreso { background: var(--superficie); }
+
+/* ---------- Texto con formato oficial para copiar o compartir ---------- */
+.texto-compartir { display: grid; gap: 8px; padding: 12px; border: 1px solid #c7d7fe; border-radius: var(--radio); background: var(--primario-suave); }
+.texto-compartir__cabeza { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; justify-content: space-between; }
+.texto-compartir__texto { margin: 0; padding: 12px; border-radius: var(--radio-sm); background: #fff; border: 1px solid var(--borde); font: 13px/1.5 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-word; max-height: 360px; overflow: auto; color: var(--texto); }
+.texto-compartir__acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.texto-compartir__acciones .ui-boton { flex: 1 1 140px; }

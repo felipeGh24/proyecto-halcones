@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
 import { pedirPermisoNotificaciones } from "./AvisoDespacho";
 import { useState } from "react";
-import { centroideUV, compararMoviles, leerPuntosFijos, leerPuntosInteres, obtenerCliente, UNIDADES_VECINALES, useDatos, type Modalidad, accesoTotalActivo } from "@plataforma/datos";
+import { centroideUV, checklistInicial, COMBUSTIBLE, guardarPpu, leerPpu, novedadesChecklist, compararMoviles, leerPuntosFijos, leerPuntosInteres, obtenerCliente, UNIDADES_VECINALES, useDatos, type Modalidad, accesoTotalActivo } from "@plataforma/datos";
+import { FormularioChecklist } from "./ChecklistMovil";
 import { avisar, Boton, Campo, Insignia, Segmentos, SelectorAdjuntos, useUsuario, EmblemaHalcon, IlustracionPatrulla } from "@plataforma/ui";
 import type { Adjunto } from "@plataforma/datos";
 
-export const ITEMS_CHECKLIST = ["Luces y baliza", "Sirena", "Radio", "Neumáticos", "Botiquín", "Extintor", "Carrocería", "Documentos del móvil"];
 
 /**
  * Inicio de turno del patrullero.
@@ -23,11 +23,11 @@ export function InicioTurno() {
   const [nombre, setNombre] = useState(usuario.nombre);
   const [acompanante, setAcompanante] = useState("");
   const [km, setKm] = useState("");
-  const [combustible, setCombustible] = useState("3/4");
-  const [checklist, setChecklist] = useState<Record<string, "ok" | "observacion">>(() => Object.fromEntries(ITEMS_CHECKLIST.map((i) => [i, "ok"])));
+  const [combustible, setCombustible] = useState("FULL");
+  const [checklist, setChecklist] = useState(checklistInicial);
+  const [ppu, setPpu] = useState("");
   const [lugar, setLugar] = useState("");
   const [halcon, setHalcon] = useState("");
-  const [detalle, setDetalle] = useState<Record<string, { descripcion: string; adjuntos: Adjunto[] }>>({});
   const [generales, setGenerales] = useState<Adjunto[]>([]);
   const [error, setError] = useState("");
   const conMovil = modalidad === "movil";
@@ -55,14 +55,14 @@ export function InicioTurno() {
             acompanante: acompanante.trim(),
             kmInicial: Number(km),
             combustible,
-            observaciones: Object.entries(checklist).filter(([, v]) => v === "observacion").map(([k]) => k),
-            checklistDetalle: Object.entries(checklist)
-              .filter(([, v]) => v === "observacion")
-              .map(([item]) => ({ item, descripcion: detalle[item]?.descripcion.trim() ?? "", adjuntos: detalle[item]?.adjuntos ?? [] })),
+            observaciones: novedadesChecklist(checklist),
             adjuntosGenerales: generales,
+            ppu: ppu.trim().toUpperCase(),
+            checklist,
           },
           usuario,
         );
+        if (ppu.trim()) guardarPpu(movilId, ppu);
       } else {
         const fijo = fijos.find((r) => r.id === lugar);
         const recinto = recintos.find((r) => r.id === lugar);
@@ -118,7 +118,7 @@ export function InicioTurno() {
           </p>
         </div>
         <Segmentos<Modalidad>
-          etiqueta="Modalidad"
+          etiqueta="Servicio"
           valor={modalidad}
           onCambio={(m) => {
             setModalidad(m);
@@ -126,13 +126,21 @@ export function InicioTurno() {
           }}
           opciones={[
             { valor: "movil", texto: "En móvil" },
-            { valor: "punto_fijo", texto: "Punto fijo" },
-            { valor: "a_pie", texto: "A pie" },
+            { valor: "punto_fijo", texto: "Punto estático" },
+            { valor: "a_pie", texto: "Otro servicio" },
           ]}
         />
         {conMovil ? (
           <Campo etiqueta="Móvil en que sales" htmlFor="movil" ayuda="Los móviles que ya tienen un patrullero en turno no se pueden elegir.">
-            <select id="movil" className="ui-entrada" value={movilId} onChange={(e) => setMovilId(e.target.value)}>
+            <select
+              id="movil"
+              className="ui-entrada"
+              value={movilId}
+              onChange={(e) => {
+                setMovilId(e.target.value);
+                setPpu(leerPpu(e.target.value));
+              }}
+            >
               <option value="">Elegir móvil…</option>
               {ordenados.map((m) => (
                 <option key={m.id} value={m.id} disabled={!!m.turno || m.estado === "fuera_de_servicio"}>
@@ -191,47 +199,18 @@ export function InicioTurno() {
               <Campo etiqueta="Kilometraje inicial" htmlFor="km">
                 <input id="km" className="ui-entrada" inputMode="numeric" value={km} onChange={(e) => setKm(e.target.value.replace(/\D/g, ""))} placeholder="Ej.: 84250" />
               </Campo>
-              <Campo etiqueta="Combustible" htmlFor="comb">
+              <Campo etiqueta="Combustible inicio" htmlFor="comb">
                 <select id="comb" className="ui-entrada" value={combustible} onChange={(e) => setCombustible(e.target.value)}>
-                  {["1/4", "1/2", "3/4", "Lleno"].map((c) => (
+                  {COMBUSTIBLE.map((c) => (
                     <option key={c}>{c}</option>
                   ))}
                 </select>
               </Campo>
             </div>
-            <fieldset className="checklist">
-              <legend>Checklist del móvil</legend>
-              {ITEMS_CHECKLIST.map((i) => (
-                <div key={i} className="checklist__bloque">
-                  <div className="checklist__item">
-                    <span>{i}</span>
-                    <Segmentos
-                      etiqueta={i}
-                      valor={checklist[i]}
-                      onCambio={(v) => setChecklist((c) => ({ ...c, [i]: v }))}
-                      opciones={[
-                        { valor: "ok", texto: "OK" },
-                        { valor: "observacion", texto: "Observación" },
-                      ]}
-                    />
-                  </div>
-                  {checklist[i] === "observacion" && (
-                    <div className="checklist__obs">
-                      <textarea
-                        className="ui-entrada"
-                        placeholder={`Describe la observación de ${i.toLowerCase()}`}
-                        value={detalle[i]?.descripcion ?? ""}
-                        onChange={(e) => setDetalle((d) => ({ ...d, [i]: { descripcion: e.target.value, adjuntos: d[i]?.adjuntos ?? [] } }))}
-                      />
-                      <SelectorAdjuntos
-                        adjuntos={detalle[i]?.adjuntos ?? []}
-                        onCambio={(a) => setDetalle((d) => ({ ...d, [i]: { descripcion: d[i]?.descripcion ?? "", adjuntos: a } }))}
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </fieldset>
+            <Campo etiqueta="PPU (patente)" htmlFor="ppu" ayuda="Queda guardada para el próximo turno en este móvil.">
+              <input id="ppu" className="ui-entrada" value={ppu} maxLength={10} autoCapitalize="characters" placeholder="Ej.: VXWW-84" onChange={(e) => setPpu(e.target.value.toUpperCase())} />
+            </Campo>
+            <FormularioChecklist valor={checklist} onCambio={setChecklist} />
             <fieldset className="checklist">
               <legend>Fotos y videos del móvil (opcional)</legend>
               <p className="pequeno texto-3">Por ejemplo, los cuatro costados y el tablero al salir.</p>

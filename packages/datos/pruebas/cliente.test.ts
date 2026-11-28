@@ -190,3 +190,26 @@ describe("despacho de varias unidades", () => {
     expect(c.instantanea().moviles.find((m) => m.id === "MOVIL-02")!.estado).toBe("disponible");
   });
 });
+
+describe("procedimiento iniciado en terreno", () => {
+  const c = obtenerCliente();
+  c.reiniciar("ejemplo");
+  const punto = { lat: -33.385, lng: -70.672 };
+
+  it("exige turno abierto", () => {
+    expect(() => c.iniciarEnTerreno({ claveNumero: 2, descripcion: "", direccion: "Prueba", ubicacion: punto }, "MOVIL-05", patrullero)).toThrow();
+  });
+
+  it("crea el procedimiento a cargo de la unidad, ya en procedimiento y marcado como de terreno", () => {
+    c.iniciarTurno("MOVIL-05", { patrullero: "Patrullero Demo", acompanante: "", kmInicial: 10, combustible: "FULL", observaciones: [] }, patrullero, punto);
+    const p = c.iniciarEnTerreno({ claveNumero: 2, descripcion: "Riña en la vía pública", direccion: "Independencia 3499", ubicacion: punto }, "MOVIL-05", patrullero);
+    expect(p.origen).toBe("terreno");
+    expect(p.estado).toBe("en_procedimiento");
+    expect(p.unidades?.find((u) => u.id === "MOVIL-05")?.aCargo).toBe(true);
+    expect(p.eventos[0].nota).toMatch(/Iniciado en terreno/);
+  });
+
+  it("no permite iniciar otro mientras hay uno activo", () => {
+    expect(() => c.iniciarEnTerreno({ claveNumero: 2, descripcion: "", direccion: "Otra", ubicacion: punto }, "MOVIL-05", patrullero)).toThrow(/activo/);
+  });
+});

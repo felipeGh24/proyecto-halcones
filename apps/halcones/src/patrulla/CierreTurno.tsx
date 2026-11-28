@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { obtenerCliente, type Movil, type TurnoPersonal } from "@plataforma/datos";
+import { checklistInicial, COMBUSTIBLE, novedadesChecklist, obtenerCliente, textoChecklist, type Movil, type TurnoPersonal } from "@plataforma/datos";
 import { avisar, Boton, Campo, Modal, useSesion, useUsuario } from "@plataforma/ui";
-import { ITEMS_CHECKLIST } from "./InicioTurno";
+import { FormularioChecklist, TextoParaCompartir } from "./ChecklistMovil";
 
 /**
- * Cierre de turno: con móvil pide kilometraje final, combustible y novedades del checklist; sin móvil, solo novedades.
+ * Cierre de turno. Con móvil: «CHECK LIST MÓVIL TÉRMINO DEL SERVICIO» con el formato oficial (km, combustible,
+ * estado del móvil, equipamiento, accesorios y novedades), listo para copiar o compartir. Sin móvil: solo novedades.
  * El turno queda en el historial y la Central lo ve en la bitácora.
  */
 export function CierreTurno({ movil, personal, bloqueado, modo = "salir", onCerrar }: { movil?: Movil; personal?: TurnoPersonal; bloqueado: boolean; modo?: "salir" | "cambiar"; onCerrar: () => void }) {
@@ -13,17 +14,38 @@ export function CierreTurno({ movil, personal, bloqueado, modo = "salir", onCerr
   const { salir } = useSesion();
   const navegar = useNavigate();
   const [km, setKm] = useState("");
-  const [combustible, setCombustible] = useState("1/2");
-  const [novedades, setNovedades] = useState<string[]>([]);
+  const [combustible, setCombustible] = useState("3/4");
+  // Parte del checklist del inicio: solo se corrige lo que cambió durante el turno.
+  const [checklist, setChecklist] = useState(() => movil?.turno?.checklist ?? checklistInicial());
+  const termino = useMemo(() => new Date(), []);
   const [observaciones, setObservaciones] = useState("");
   const [error, setError] = useState("");
   const kmInicial = movil?.turno?.kmInicial ?? null;
   const kmValido = !movil || (/^\d+$/.test(km) && (kmInicial == null || Number(km) >= kmInicial));
+  const texto =
+    movil?.turno &&
+    textoChecklist({
+      momento: "termino",
+      fecha: new Date(movil.turno.iniciadoEn),
+      horaInicio: new Date(movil.turno.iniciadoEn),
+      horaTermino: termino,
+      movil: movil.nombre,
+      ppu: movil.turno.ppu ?? "",
+      conductor: [movil.turno.halcon ? `H-${movil.turno.halcon}` : "", movil.turno.patrullero].filter(Boolean).join(" "),
+      acompanante: movil.turno.acompanante,
+      kmInicio: kmInicial,
+      kmTermino: /^\d+$/.test(km) ? Number(km) : null,
+      combustibleInicio: movil.turno.combustible,
+      combustibleTermino: combustible,
+      checklist,
+    });
 
   function cerrar() {
     setError("");
     try {
-      const cierre = { kmFinal: movil ? Number(km) : null, combustibleFinal: movil ? combustible : null, novedadesChecklist: novedades, observaciones };
+      const cierre = movil
+        ? { kmFinal: Number(km), combustibleFinal: combustible, novedadesChecklist: novedadesChecklist(checklist), observaciones: observaciones || checklist.novedades, checklistTermino: checklist, textoChecklist: texto || undefined }
+        : { observaciones };
       if (movil) obtenerCliente().cerrarTurno(movil.id, usuario, cierre);
       else if (personal) obtenerCliente().cerrarTurnoPersonal(personal.id, usuario, cierre);
       if (modo === "cambiar") {
@@ -74,31 +96,21 @@ export function CierreTurno({ movil, personal, bloqueado, modo = "salir", onCerr
               <Campo etiqueta="Kilometraje final" htmlFor="kmf" error={km && !kmValido ? `No puede ser menor que el inicial (${kmInicial?.toLocaleString("es-CL")} km)` : undefined} ayuda={kmInicial != null ? `Inicial: ${kmInicial.toLocaleString("es-CL")}` : undefined}>
                 <input id="kmf" className="ui-entrada" inputMode="numeric" value={km} onChange={(e) => setKm(e.target.value.replace(/\D/g, ""))} />
               </Campo>
-              <Campo etiqueta="Combustible" htmlFor="combf">
+              <Campo etiqueta="Combustible término" htmlFor="combf" ayuda={movil.turno ? `Inicio: ${movil.turno.combustible}` : undefined}>
                 <select id="combf" className="ui-entrada" value={combustible} onChange={(e) => setCombustible(e.target.value)}>
-                  {["Reserva", "1/4", "1/2", "3/4", "Lleno"].map((c) => (
+                  {COMBUSTIBLE.map((c) => (
                     <option key={c}>{c}</option>
                   ))}
                 </select>
               </Campo>
             </div>
             {kmInicial != null && kmValido && km && <p className="pequeno texto-2">Recorrido del turno: {(Number(km) - kmInicial).toLocaleString("es-CL")} km</p>}
-            <fieldset className="checklist">
-              <legend>¿Algo con novedad al entregar el móvil?</legend>
-              <div className="novedades">
-                {ITEMS_CHECKLIST.map((i) => {
-                  const marcado = novedades.includes(i);
-                  return (
-                    <button key={i} type="button" className={`ui-boton ${marcado ? "ui-boton--primario" : "ui-boton--secundario"}`} aria-pressed={marcado} onClick={() => setNovedades((n) => (marcado ? n.filter((x) => x !== i) : [...n, i]))}>
-                      {i}
-                    </button>
-                  );
-                })}
-              </div>
-            </fieldset>
+            <p className="pequeno texto-3">Viene con lo que marcaste al iniciar el turno: corrige solo lo que cambió.</p>
+            <FormularioChecklist valor={checklist} onCambio={setChecklist} />
+            {texto && <TextoParaCompartir titulo="Checklist de término para compartir" texto={texto} />}
           </>
         )}
-        <Campo etiqueta="Novedades del turno (opcional)" htmlFor="obs">
+        <Campo etiqueta={movil ? "Novedades para el turno siguiente (opcional)" : "Novedades del turno (opcional)"} htmlFor="obs">
           <textarea id="obs" className="ui-entrada" value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Lo que debe saber el turno siguiente" />
         </Campo>
       </div>

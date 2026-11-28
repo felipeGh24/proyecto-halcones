@@ -53,6 +53,11 @@ class Pagina:
         self.page.fill("#contrasena", CONTRASENA)
         self.page.click("button[type=submit]")
         self.page.wait_for_timeout(1500)
+        # Halcones: después del ingreso se elige cómo iniciar (Central o patrullero) según el rol.
+        if sistema == "halcones" and self.page.locator(".elegir").count():
+            modo = "patrulla" if correo.startswith(("patrullero", "analista")) else "central"
+            self.page.click(f".elegir__opcion[data-modo={modo}]")
+            self.page.wait_for_timeout(800)
 
     def abrir_turno_central(self, nombre="Operador de Prueba", halcon="3"):
         if self.page.locator("text=Inicio de turno en la Central").count():

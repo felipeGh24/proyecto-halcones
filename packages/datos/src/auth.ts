@@ -53,6 +53,16 @@ export function configurarAccesoTotal(activo: boolean) {
   accesoTotal = activo;
 }
 
+/** Cómo se puede iniciar en Halcones según el rol. Esta regla se aplica siempre, también en la demostración. */
+export type ModoHalcones = "central" | "patrulla";
+export const ROLES_MODO: Record<ModoHalcones, readonly Rol[]> = {
+  central: ["administrador", "jefatura", "supervisor", "operador"],
+  patrulla: ["administrador", "supervisor", "patrullero"],
+};
+export function puedeIniciarComo(rol: Rol, modo: ModoHalcones): boolean {
+  return ROLES_MODO[modo].includes(rol);
+}
+
 export function puede(rol: Rol, accion: Accion): boolean {
   return accesoTotal || PERMISOS[rol].includes(accion);
 }

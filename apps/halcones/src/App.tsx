@@ -17,12 +17,14 @@ const TurnosCentral = pantalla("TurnosCentral");
 const Lugares = pantalla("Lugares");
 const Patrulla = lazy(async () => ({ default: (await import("./patrulla/Patrulla")).Patrulla }));
 
+import { ElegirIngreso } from "./ElegirIngreso";
+
 const CENTRAL = ["administrador", "jefatura", "supervisor", "operador"] as const;
 
 function Inicio() {
   const { sesion } = useSesion();
   if (!sesion) return <Navigate to="/ingreso" replace />;
-  return <Navigate to={sesion.usuario.rol === "patrullero" ? "/patrulla" : "/central"} replace />;
+  return <Navigate to="/elegir" replace />;
 }
 
 export function App() {
@@ -34,7 +36,7 @@ export function App() {
           path="/ingreso"
           element={
             <PantallaIngreso
-              destino={(s) => (s.usuario.rol === "patrullero" ? "/patrulla" : "/central")}
+              destino={() => "/elegir"}
               puntos={[
                 "Crea y despacha un procedimiento en menos de 30 segundos.",
                 "Cola ordenada por el semáforo de cada clave.",
@@ -44,6 +46,7 @@ export function App() {
             />
           }
         />
+        <Route path="/elegir" element={<RutaProtegida><ElegirIngreso /></RutaProtegida>} />
         <Route path="/sin-acceso" element={<PantallaSinAcceso />} />
         <Route path="/" element={<Inicio />} />
         <Route path="/central" element={<RutaProtegida roles={[...CENTRAL]}><Tablero /></RutaProtegida>} />

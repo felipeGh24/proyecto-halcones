@@ -6,6 +6,7 @@ import { avisar, Boton, Icono, Insignia, Modal, Semaforo, useUsuario, type Nombr
 import { CierreTurno } from "./CierreTurno";
 import { InicioTurno } from "./InicioTurno";
 import { NuevoReporte } from "./NuevoReporte";
+import { IniciarProcedimiento } from "./IniciarProcedimiento";
 import { PestanaBitacora, PestanaReportes, PestanaTurno } from "./Pestanas";
 import { posicionActual, useTurnoActual } from "./turnoActual";
 
@@ -35,6 +36,9 @@ export function Patrulla() {
   const [cerrando, setCerrando] = useState<null | "salir" | "cambiar">(null);
   const [enviando, setEnviando] = useState(false);
   const [reportar, setReportar] = useState(false);
+  const [iniciando, setIniciando] = useState(false);
+  // Procedimiento cuyo reporte se está completando (el asignado o uno ya finalizado).
+  const [reporteDe, setReporteDe] = useState<string | null>(null);
 
   if (!turno) return <InicioTurno />;
 
@@ -65,6 +69,11 @@ export function Patrulla() {
     obtenerCliente().cambiarEstado(asignado.id, estado, usuario, { ubicacion, resultado, nota: ubicacion ? "Ubicación del celular registrada" : undefined });
     setEnviando(false);
     avisar(`Estado: ${ESTADOS[estado].etiqueta}`);
+    // Al finalizar, se abre el reporte del procedimiento ya completado con sus datos.
+    if (estado === "finalizado" && !obtenerCliente().instantanea().reportes.some((r) => r.procedimientoId === asignado.id)) {
+      setReporteDe(asignado.id);
+      setReportar(true);
+    }
   }
 
   return (
@@ -102,6 +111,7 @@ export function Patrulla() {
                     {ESTADOS[asignado.estado].etiqueta}
                   </Insignia>
                   <Insignia tono={deApoyo ? "alerta" : "ok"}>{deApoyo ? "De apoyo" : "A cargo"}</Insignia>
+                  {asignado.origen === "terreno" && <Insignia tono="info">Iniciado en terreno</Insignia>}
                 </div>
                 <h1>
                   {asignado.claveNumero} · {obtenerClave(asignado.claveNumero)?.nombre}
@@ -131,6 +141,18 @@ export function Patrulla() {
                     {sigApoyo.texto}
                   </Boton>
                 )}
+                <Boton
+                  variante="secundario"
+                  grande
+                  bloque
+                  icono="documento"
+                  onClick={() => {
+                    setReporteDe(asignado.id);
+                    setReportar(true);
+                  }}
+                >
+                  Completar reporte
+                </Boton>
               </section>
             ) : (
               <section className="patrulla__libre">
@@ -141,15 +163,41 @@ export function Patrulla() {
                 </p>
               </section>
             )}
-            <Boton variante="secundario" grande bloque icono="documento" onClick={() => setReportar(true)}>
-              Enviar reporte
+            {!asignado && (
+              <Boton variante="primario" grande bloque icono="mas" onClick={() => setIniciando(true)}>
+                Iniciar procedimiento
+              </Boton>
+            )}
+            <Boton
+              variante="secundario"
+              grande
+              bloque
+              icono="documento"
+              onClick={() => {
+                setReporteDe(null);
+                setReportar(true);
+              }}
+            >
+              Reporte preventivo o punto estático
             </Boton>
             <Boton variante="peligro" grande bloque icono="sirena" onClick={() => setApoyo(true)}>
               Solicitar apoyo
             </Boton>
           </div>
         )}
-        {pestana === "reportes" && <PestanaReportes turno={turno} onNuevo={() => setReportar(true)} />}
+        {pestana === "reportes" && (
+          <PestanaReportes
+            turno={turno}
+            onNuevo={() => {
+              setReporteDe(null);
+              setReportar(true);
+            }}
+            onCompletar={(id) => {
+              setReporteDe(id);
+              setReportar(true);
+            }}
+          />
+        )}
         {pestana === "bitacora" && <PestanaBitacora turno={turno} />}
         {pestana === "turno" && <PestanaTurno turno={turno} onCambiar={() => setCerrando("cambiar")} onCerrar={() => setCerrando("salir")} />}
       </main>
@@ -164,7 +212,26 @@ export function Patrulla() {
       </nav>
 
       {envio && !envio.unidad.recibidoEn && <AvisoDespacho procedimiento={envio.procedimiento} unidad={envio.unidad} />}
-      {reportar && <NuevoReporte turno={turno} procedimientoInicial={asignado} onCerrar={() => setReportar(false)} />}
+      {reportar && (
+        <NuevoReporte
+          turno={turno}
+          procedimientoInicial={reporteDe ? procedimientos.find((p) => p.id === reporteDe) : undefined}
+          onCerrar={() => {
+            setReportar(false);
+            setReporteDe(null);
+          }}
+        />
+      )}
+      {iniciando && (
+        <IniciarProcedimiento
+          turno={turno}
+          onCerrar={() => setIniciando(false)}
+          onCreado={() => {
+            setIniciando(false);
+            setPestana("inicio");
+          }}
+        />
+      )}
       {finalizando && asignado && (
         <Finalizar
           onCerrar={() => setFinalizando(false)}

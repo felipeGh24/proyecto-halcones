@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { fechaHora, hora, normalizar, obtenerClave, obtenerCliente, TIPOS_REPORTE, useDatos, type Reporte, type TipoReporte } from "@plataforma/datos";
-import { Insignia, Segmentos, useUsuario, Vacio, VistaAdjuntos } from "@plataforma/ui";
+import { fechaHora, hora, normalizar, obtenerClave, obtenerCliente, TIPOS_REPORTE, useDatos, type Reporte, type TipoReporte, textoReporte } from "@plataforma/datos";
+import { Insignia, Segmentos, useUsuario, Vacio, VistaAdjuntos, TextoParaCompartir } from "@plataforma/ui";
 import { MarcoCentral } from "./MarcoCentral";
 
 type Filtro = "todos" | "sin_leer";
@@ -146,6 +146,7 @@ export function Reportes() {
                 <p>{sel.observaciones || <span className="texto-3">Sin observaciones</span>}</p>
                 {sel.adjuntos.length > 0 && <VistaAdjuntos adjuntos={sel.adjuntos} />}
               </section>
+              <TextoParaCompartir titulo="Texto con el formato del equipo" texto={textoReporte(sel)} />
               {sel.complementos.map((c, i) => (
                 <section key={i} className="reporte__complemento">
                   <h3>Añadido a las {hora(c.en)}</h3>

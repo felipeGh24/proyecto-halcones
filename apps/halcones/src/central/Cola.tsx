@@ -72,6 +72,7 @@ export function Cola({ procedimientos, moviles, seleccionId, onSeleccionar }: { 
                   <Insignia tono={esperando ? "peligro" : "info"} punto>
                     {ESTADOS[p.estado].etiqueta}
                   </Insignia>
+                  {p.origen === "terreno" && <Insignia tono="alerta">Iniciado en terreno</Insignia>}
                   <span className="pequeno texto-3">{movil ? movil.nombre : `${p.folio}`}</span>
                 </span>
               </button>

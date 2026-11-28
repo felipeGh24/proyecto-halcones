@@ -62,7 +62,7 @@ describe("callejero propio", () => {
 
   it("trae los cinco puntos fijos y ubica los del metro", () => {
     const pf = leerPuntosFijos();
-    expect(pf.map((p) => p.nombre)).toEqual(["Metro Conchalí", "Metro Vivaceta", "Metro Cardenal Caro", "Paso Bajo Nivel", "Pasarela"]);
+    expect(pf.map((p) => p.nombre)).toEqual(["Metro Conchalí", "Metro Vivaceta", "Metro Cardenal Caro", "Paso Bajo Nivel", "Pasarela Mall (Módulo de Prevención)"]);
     expect(pf.slice(0, 3).every((p) => p.ubicacion && p.unidadVecinal)).toBe(true);
   });
 });
