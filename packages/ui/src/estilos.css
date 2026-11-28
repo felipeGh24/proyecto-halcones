@@ -1,6 +1,6 @@
 /* =========================================================
-   Sistema de diseño «Claro institucional», versión «Marino vivo» (26-11-2026):
-   barra lateral azul marino, acentos cian y fondo azulado para que no se vea tan blanco.
+   Sistema de diseño «Claro institucional», versión «Grafito y acero» (28-11-2026), tomada del logo oficial:
+   barra lateral grafito, logo grafito/acero, fondo blanco; el azul queda para acciones y el cian para acentos.
    Paleta elegida con el plugin UI/UX Pro Max (perfil «Government/Public Service»: marino + azul de alto contraste).
    Fondo blanco, mucho aire, color solo donde significa algo.
    El rojo, el ámbar y el verde se reservan para el semáforo y los estados.
@@ -8,18 +8,20 @@
 
 :root {
   --fondo: #ffffff;
-  --superficie: #eaf0f8;
-  --superficie-2: #dce6f4;
-  --borde: #dde5f0;
-  --borde-fuerte: #c3cfdf;
-  --texto: #0e1a2b;
+  --superficie: #f1f3f6;
+  --superficie-2: #e4e8ed;
+  --borde: #e0e4ea;
+  --borde-fuerte: #c8cfd8;
+  --texto: #161b22;
   --texto-2: #475467;
   --texto-3: #556075;
   --primario: #1d4ed8;
   --primario-hover: #1e40af;
   --primario-suave: #e8efff;
-  --marino: #0b1b3f;
-  --marino-2: #12306b;
+  --marino: #161b22;
+  --grafito: #161b22;
+  --acero: #6b7785;
+  --marino-2: #2a313b;
   --acento: #22d3ee;
   --acento-fuerte: #0e7490;
   --secundario: #0f766e;
@@ -33,7 +35,7 @@
 
   --radio: 10px;
   --radio-sm: 6px;
-  --sombra: 0 1px 2px rgba(16, 24, 40, 0.06), 0 6px 16px rgba(30, 58, 138, 0.06);
+  --sombra: 0 1px 2px rgba(16, 24, 40, 0.06), 0 6px 16px rgba(22, 27, 34, 0.06);
   --sombra-flotante: 0 12px 32px rgba(16, 24, 40, 0.12);
   --foco: 0 0 0 3px rgba(29, 78, 216, 0.25);
 
@@ -287,13 +289,14 @@ select.ui-entrada { padding-right: 32px; appearance: none; background-image: url
 .ui-boton--primario:hover:not(:disabled) { background: linear-gradient(180deg, #1d4ed8, #1e40af); }
 
 /* Barra lateral marino */
-.ui-marco__lateral { background: linear-gradient(180deg, var(--marino) 0%, #0f2656 60%, var(--marino-2) 100%); border-right: 0; color: #dbe4ff; }
+.ui-marco__lateral { background: linear-gradient(180deg, #161b22 0%, #1d232b 60%, #232a33 100%); border-right: 0; color: #e6eaf0; }
 .ui-marco__marca { border-bottom-color: rgba(255, 255, 255, 0.1); }
+.ui-marco__logo-h { flex: none; }
 .ui-marco__logo { width: 36px; height: 36px; background: none; border-radius: 0; }
 .ui-marco__lateral .ui-marco__nombre { color: #fff; }
-.ui-marco__lateral .ui-marco__org { color: #93a9d6; }
-.ui-marco__seccion { color: #8ea4d6; }
-.ui-nav { color: #c7d2fe; }
+.ui-marco__lateral .ui-marco__org { color: #9aa5b4; }
+.ui-marco__seccion { color: #8f9aa9; }
+.ui-nav { color: #cfd6df; }
 .ui-nav:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
 .ui-nav.active { background: linear-gradient(90deg, #1d4ed8, #2563eb); color: #fff; box-shadow: inset 3px 0 0 var(--acento); }
 .ui-nav__cuenta { background: rgba(255, 255, 255, 0.14); color: #fff; border-radius: 999px; padding: 0 7px; min-width: 22px; text-align: center; }
@@ -322,7 +325,7 @@ select.ui-entrada { padding-right: 32px; appearance: none; background-image: url
 .ilustracion-vacia { width: 96px; height: 96px; }
 
 /* Ingreso: panel ilustrado */
-.ui-ingreso__lado { background: linear-gradient(160deg, var(--marino) 0%, #12306b 55%, #1d4ed8 120%); border-right: 0; color: #dbe4ff; }
+.ui-ingreso__lado { background: linear-gradient(160deg, #161b22 0%, #2a313b 60%, #3a4452 120%); border-right: 0; color: #e6eaf0; }
 .ui-ingreso__lado .ui-marco__nombre { color: #fff; }
 .ui-ingreso__lado .ui-marco__org { color: #93a9d6; }
 .ui-ingreso__ilustracion { width: 100%; max-width: 520px; height: auto; border-radius: 24px; box-shadow: 0 20px 50px rgba(2, 6, 23, 0.45); margin-bottom: 24px; }
@@ -341,82 +344,80 @@ select.ui-entrada { padding-right: 32px; appearance: none; background-image: url
 .texto-compartir__acciones { display: flex; flex-wrap: wrap; gap: 8px; }
 .texto-compartir__acciones .ui-boton { flex: 1 1 140px; }
 
-/* ===== Logo Halcones ===== */
-.logo-halcones { position: relative; display: inline-block; flex: none; }
-.logo-halcones__anillo, .logo-halcones__ave { position: absolute; inset: 0; width: 100%; height: 100%; }
-.logo-halcones__ave { inset: 4% 3% 6% 5%; width: 92%; height: 90%; }
-.logo-halcones__trazo { stroke-dasharray: 100; stroke-dashoffset: 0; }
-
-/* ===== Entrada animada ===== */
+/* ===== Entrada animada (fondo blanco, logo en sus colores) ===== */
 .entrada { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; cursor: pointer;
-  background: radial-gradient(1200px 700px at 60% 35%, #1d4ed8 0%, #12306b 35%, #0b1b3f 70%, #060f26 100%);
-  color: #fff; animation: entrada-aparece 300ms ease-out both; }
+  background: radial-gradient(900px 600px at 50% 42%, #ffffff 0%, #f4f6f8 60%, #e9edf1 100%);
+  color: var(--grafito); animation: entrada-aparece 250ms ease-out both; }
 .entrada--sale { animation: entrada-sale 450ms ease-in forwards; }
-.entrada__brillo { position: absolute; width: 520px; height: 520px; border-radius: 50%;
-  background: radial-gradient(circle, rgb(34 211 238 / 0.35), transparent 65%); animation: entrada-pulso 2.4s ease-out both; }
-.entrada__centro { position: relative; display: grid; justify-items: center; gap: 10px; text-align: center; }
-.entrada__logo .logo-halcones__trazo { animation: entrada-anillo 1000ms 150ms cubic-bezier(.65,0,.35,1) both; }
-.entrada__logo .logo-halcones__anillo circle:first-of-type { animation: entrada-escala 600ms 50ms cubic-bezier(.2,.9,.3,1.2) both; transform-origin: center; }
-.entrada__logo .logo-halcones__ave { animation: entrada-picada 900ms 450ms cubic-bezier(.2,.8,.2,1) both; }
-.entrada__nombre { margin: 18px 0 0; font-size: clamp(36px, 6vw, 64px); font-weight: 800; color: #fff;
-  animation: entrada-nombre 900ms 1000ms cubic-bezier(.2,.8,.2,1) both; }
-.entrada__sub { margin: 0; color: #a5c3f0; letter-spacing: 0.18em; text-transform: uppercase; font-size: 13px; animation: entrada-sube 600ms 1400ms ease-out both; }
-.entrada__demo { margin-top: 10px; padding: 4px 12px; border-radius: 999px; border: 1px solid #fbbf24; color: #fde68a; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; animation: entrada-sube 600ms 1600ms ease-out both; }
-.entrada__saltar { position: absolute; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom)); min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid rgb(255 255 255 / .35); background: rgb(255 255 255 / .08); color: #fff; font: inherit; cursor: pointer; }
+.entrada__brillo { position: absolute; width: 560px; height: 560px; border-radius: 50%;
+  background: radial-gradient(circle, rgb(107 119 133 / 0.18), transparent 65%); animation: entrada-pulso 2.6s ease-out both; }
+.entrada__centro { position: relative; display: grid; justify-items: center; gap: 12px; text-align: center; }
+.entrada__logo { position: relative; width: min(680px, 86vw, 95vh); aspect-ratio: 1040 / 888; }
+.entrada__capa { position: absolute; inset: 0; width: 100%; height: 100%; }
+.entrada__capa--ala { animation: entrada-barrido 800ms 150ms cubic-bezier(.65,0,.35,1) both; }
+.entrada__capa--ave { animation: entrada-barrido 900ms 450ms cubic-bezier(.65,0,.35,1) both, entrada-asoma 900ms 450ms cubic-bezier(.2,.8,.2,1) both; }
+.entrada__ojo { transform-box: fill-box; transform-origin: center; opacity: 0; animation: entrada-ojo 700ms 1350ms ease-out both; }
+.entrada__capa--texto { animation: entrada-texto 800ms 1300ms cubic-bezier(.2,.8,.2,1) both; }
+.entrada__sub { margin: 4px 0 0; color: var(--texto-2); letter-spacing: 0.2em; text-transform: uppercase; font-size: 13px; animation: entrada-sube 600ms 1800ms ease-out both; }
+.entrada__demo { margin-top: 6px; padding: 4px 12px; border-radius: 999px; background: #fef3c7; border: 1px solid #fcd34d; color: #78350f; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; animation: entrada-sube 600ms 2000ms ease-out both; }
+.entrada__saltar { position: absolute; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom)); min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--borde-fuerte); background: #fff; color: var(--texto); font: inherit; cursor: pointer; }
 @keyframes entrada-aparece { from { opacity: 0; } }
-@keyframes entrada-sale { to { opacity: 0; transform: scale(1.04); visibility: hidden; } }
-@keyframes entrada-pulso { 0% { transform: scale(.3); opacity: 0; } 40% { opacity: 1; } 100% { transform: scale(1.3); opacity: .5; } }
-@keyframes entrada-anillo { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
-@keyframes entrada-escala { from { transform: scale(.6); opacity: 0; } }
-@keyframes entrada-picada { 0% { transform: translate(-70%, -80%) scale(.4) rotate(-18deg); opacity: 0; } 60% { opacity: 1; } 80% { transform: translate(3%, 3%) scale(1.04) rotate(2deg); } 100% { transform: none; } }
-@keyframes entrada-nombre { from { letter-spacing: .6em; opacity: 0; filter: blur(6px); } to { letter-spacing: .16em; opacity: 1; filter: none; } }
+@keyframes entrada-sale { to { opacity: 0; transform: scale(1.03); visibility: hidden; } }
+@keyframes entrada-pulso { 0% { transform: scale(.3); opacity: 0; } 40% { opacity: 1; } 100% { transform: scale(1.25); opacity: .6; } }
+@keyframes entrada-barrido { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes entrada-asoma { from { transform: translateX(-4%) scale(.96); } }
+@keyframes entrada-ojo { 0% { opacity: 0; transform: scale(.2); } 40% { opacity: 1; transform: scale(1.4); } 100% { opacity: 0; transform: scale(.6); } }
+@keyframes entrada-texto { from { opacity: 0; transform: translateY(6%); filter: blur(4px); } }
 @keyframes entrada-sube { from { transform: translateY(10px); opacity: 0; } }
 
-/* ===== Ingreso de Halcones con «pantalla al lado» ===== */
-.ui-ingreso--halcones { grid-template-columns: minmax(520px, 1.25fr) minmax(400px, 520px); }
-.ingreso-h { padding: 40px 48px; gap: 28px; position: relative; overflow: hidden; }
-.ingreso-h::before { content: ""; position: absolute; inset: -20% -30% auto auto; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(circle, rgb(34 211 238 / .22), transparent 65%); pointer-events: none; }
-.ingreso-h__marca { display: flex; align-items: center; gap: 18px; position: relative; }
-.ingreso-h__sistema { margin: 0; font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: var(--acento); font-weight: 700; }
-.ingreso-h__nombre { margin: 0; font-size: 40px; line-height: 1; font-weight: 800; letter-spacing: .14em; color: #fff; }
-.ingreso-h__org { margin: 6px 0 0; color: #a5c3f0; font-size: 14px; }
-.ingreso-h__puntos { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; color: #c7d2fe; position: relative; }
+/* ===== Ingreso de Halcones: blanco, con «pantalla al lado» ===== */
+.ui-ingreso--halcones { grid-template-columns: minmax(520px, 1.25fr) minmax(400px, 520px); background: #fff; }
+.ui-ingreso__lado.ingreso-h { justify-content: center; background: linear-gradient(160deg, #ffffff 0%, #f5f7f9 55%, #eceff3 100%); color: var(--texto); border-right: 1px solid var(--borde); padding: 40px 48px; gap: 28px; position: relative; overflow: hidden; }
+.ingreso-h::before { content: ""; position: absolute; right: -180px; top: -160px; width: 560px; height: 560px; border-radius: 50%; background: radial-gradient(circle, rgb(107 119 133 / .12), transparent 65%); pointer-events: none; }
+.ingreso-h__marca { display: flex; justify-content: center; position: relative; padding: 8px 0 4px; }
+.ingreso-h__logo { max-width: 100%; height: auto; }
+.ingreso-h__sistema { margin: 0; font-size: 12px; letter-spacing: .24em; text-transform: uppercase; color: var(--acero); font-weight: 700; }
+.ingreso-h__org { margin: 6px 0 0; color: var(--texto-2); font-size: 14px; }
+.ingreso-h__puntos { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; color: var(--texto-2); position: relative; }
 .ingreso-h__puntos li { display: flex; gap: 10px; align-items: flex-start; }
-.ingreso-h__puntos svg { color: var(--acento); flex: none; margin-top: 2px; }
+.ingreso-h__puntos svg { color: var(--primario); flex: none; margin-top: 2px; }
+.ingreso-h .ui-ingreso__pie { color: var(--texto-3); }
 .vista-h { position: relative; padding-right: 70px; }
-.vista-h__pantalla { border-radius: 16px; background: #f5f8fd; box-shadow: 0 30px 60px rgb(2 6 23 / .5); overflow: hidden; transform: perspective(1400px) rotateY(-6deg) rotateX(2deg); transform-origin: left center; }
-.vista-h__barra { display: flex; align-items: center; gap: 6px; padding: 9px 12px; background: var(--marino); color: #a5c3f0; font-size: 12px; }
-.vista-h__barra i { width: 9px; height: 9px; border-radius: 50%; background: #334a7d; }
+.vista-h__pantalla { border-radius: 16px; background: #f6f8fa; border: 1px solid var(--borde); box-shadow: 0 24px 50px rgb(22 27 34 / .16); overflow: hidden; transform: perspective(1400px) rotateY(-6deg) rotateX(2deg); transform-origin: left center; }
+.vista-h__barra { display: flex; align-items: center; gap: 6px; padding: 9px 12px; background: var(--grafito); color: #c5ccd5; font-size: 12px; }
+.vista-h__barra i { width: 9px; height: 9px; border-radius: 50%; background: #3a4350; }
 .vista-h__barra span { margin-left: 8px; }
-.vista-h__cuerpo { display: grid; grid-template-columns: 1.4fr 1fr; grid-template-rows: auto 1fr; gap: 10px; padding: 12px; color: #0b1b3f; }
+.vista-h__cuerpo { display: grid; grid-template-columns: 1.4fr 1fr; grid-template-rows: auto 1fr; gap: 10px; padding: 12px; color: var(--texto); }
 .vista-h__kpis { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.vista-h__kpis div { background: #fff; border-radius: 10px; padding: 8px 10px; display: grid; box-shadow: 0 1px 2px rgb(11 27 63 / .08); }
+.vista-h__kpis div { background: #fff; border-radius: 10px; padding: 8px 10px; display: grid; box-shadow: 0 1px 2px rgb(22 27 34 / .08); }
 .vista-h__kpis b { font-size: 20px; }
-.vista-h__kpis span { font-size: 11px; color: #556075; }
+.vista-h__kpis span { font-size: 11px; color: var(--texto-3); }
 .vista-h__mapa { position: relative; min-height: 150px; border-radius: 10px; background:
   linear-gradient(90deg, transparent 47%, #fff 47% 53%, transparent 53%) 0 0 / 60px 60px,
   linear-gradient(0deg, transparent 47%, #fff 47% 53%, transparent 53%) 0 0 / 60px 60px,
-  linear-gradient(35deg, transparent 49%, #fde68a 49% 52%, transparent 52%), #dbe7f5; }
-.vista-h__punto { position: absolute; width: 12px; height: 12px; border-radius: 50%; background: #2563eb; border: 2px solid #fff; box-shadow: 0 0 0 0 rgb(37 99 235 / .5); animation: vista-pulso 2s infinite; }
+  linear-gradient(35deg, transparent 49%, #fde68a 49% 52%, transparent 52%), #e3e8ee; }
+.vista-h__punto { position: absolute; width: 12px; height: 12px; border-radius: 50%; background: var(--primario); border: 2px solid #fff; box-shadow: 0 0 0 0 rgb(29 78 216 / .5); animation: vista-pulso 2s infinite; }
 .vista-h__punto--1 { left: 22%; top: 30%; } .vista-h__punto--2 { left: 58%; top: 62%; animation-delay: .6s; } .vista-h__punto--3 { left: 76%; top: 24%; animation-delay: 1.2s; }
 .vista-h__alerta { position: absolute; left: 44%; top: 40%; width: 16px; height: 16px; border-radius: 50%; background: #dc2626; border: 2px solid #fff; box-shadow: 0 0 0 6px rgb(220 38 38 / .25); }
 .vista-h__cola { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; align-content: start; }
 .vista-h__cola li { background: #fff; border-radius: 8px; padding: 7px 9px; font-size: 12px; font-weight: 600; display: grid; grid-template-columns: auto 1fr; column-gap: 7px; }
-.vista-h__cola small { grid-column: 2; font-weight: 400; color: #556075; }
+.vista-h__cola small { grid-column: 2; font-weight: 400; color: var(--texto-3); }
 .vista-h__cola em { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; }
 .vista-h__cola .rojo { background: #dc2626; } .vista-h__cola .ambar { background: #f59e0b; } .vista-h__cola .verde { background: #16a34a; }
-.vista-h__celular { position: absolute; right: 0; bottom: -18px; width: 132px; height: 230px; border-radius: 22px; background: #0b1b3f; border: 5px solid #1e293b; box-shadow: 0 24px 50px rgb(2 6 23 / .55); padding: 10px 8px; display: flex; align-items: flex-end; }
-.vista-h__aviso { width: 100%; background: #fff; border-radius: 12px; padding: 9px; display: grid; gap: 3px; color: #0b1b3f; font-size: 11px; animation: vista-aviso 4s 1s infinite; }
+.vista-h__celular { position: absolute; right: 0; bottom: -18px; width: 132px; height: 230px; border-radius: 22px; background: var(--grafito); border: 5px solid #2a313b; box-shadow: 0 24px 50px rgb(22 27 34 / .3); padding: 10px 8px; display: flex; align-items: flex-end; }
+.vista-h__aviso { width: 100%; background: #fff; border-radius: 12px; padding: 9px; display: grid; gap: 3px; color: var(--texto); font-size: 11px; animation: vista-aviso 4s 1s infinite; }
 .vista-h__aviso strong { color: #dc2626; font-size: 12px; }
-.vista-h__aviso b { margin-top: 4px; text-align: center; padding: 5px; border-radius: 8px; background: #2563eb; color: #fff; }
-@keyframes vista-pulso { 70% { box-shadow: 0 0 0 10px rgb(37 99 235 / 0); } 100% { box-shadow: 0 0 0 0 rgb(37 99 235 / 0); } }
+.vista-h__aviso b { margin-top: 4px; text-align: center; padding: 5px; border-radius: 8px; background: var(--primario); color: #fff; }
+@keyframes vista-pulso { 70% { box-shadow: 0 0 0 10px rgb(29 78 216 / 0); } 100% { box-shadow: 0 0 0 0 rgb(29 78 216 / 0); } }
 @keyframes vista-aviso { 0%, 10% { transform: translateY(14px); opacity: 0; } 18%, 85% { transform: none; opacity: 1; } 100% { opacity: 0; } }
 .ingreso-demo-cinta { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 12px; background: #fef3c7; color: #78350f; border: 1px solid #fcd34d; font-size: 13px; font-weight: 700; letter-spacing: .02em; }
-@media (max-width: 1100px) { .ui-ingreso--halcones { grid-template-columns: 1fr minmax(380px, 480px); } .vista-h__celular { display: none; } .vista-h { padding-right: 0; } }
-@media (max-width: 900px) { .ui-ingreso--halcones { grid-template-columns: 1fr; } }
-@media (prefers-reduced-motion: reduce) { .vista-h__punto, .vista-h__aviso { animation: none; } }
-
-.ingreso-h__movil { display: none; align-items: center; gap: 14px; }
-.ingreso-h__movil strong { display: block; font-size: 26px; letter-spacing: .14em; color: var(--marino); }
+.ingreso-h__movil { display: none; justify-content: center; padding: 8px 0; }
 .ingreso-h__movil span { font-size: 13px; color: var(--texto-2); }
-@media (max-width: 900px) { .ingreso-h__movil { display: flex; } }
+@media (max-width: 1100px) { .ui-ingreso--halcones { grid-template-columns: 1fr minmax(380px, 480px); } .vista-h__celular { display: none; } .vista-h { padding-right: 0; } }
+@media (max-width: 900px) { .ui-ingreso--halcones { grid-template-columns: 1fr; } .ingreso-h__movil { display: flex; } }
+@media (prefers-reduced-motion: reduce) { .vista-h__punto, .vista-h__aviso { animation: none; } }
+/* Ingreso: logo protagonista, la vista de la Central más chica debajo. */
+.ingreso-h .vista-h { width: min(78%, 560px); margin: 0 auto; padding-right: 56px; font-size: 0.92em; }
+.ingreso-h .vista-h__celular { width: 112px; height: 196px; bottom: -14px; }
+.ingreso-h .vista-h__mapa { min-height: 120px; }
+.ingreso-h .ingreso-h__logo { max-height: 46vh; width: auto; }

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { ROLES, SISTEMAS, tieneAcceso, type Sistema } from "@plataforma/datos";
 import { Boton, Insignia, Reloj } from "./componentes";
-import { EmblemaHalcon } from "./Ilustraciones";
+import { LogoHalcones } from "./Logo";
 import { Icono, type NombreIcono } from "./Icono";
 import { useSesion } from "./sesion";
 
@@ -43,9 +43,7 @@ export function Marco({ titulo, subtitulo, nav, acciones, persona, children }: {
     <div className="ui-marco">
       <aside className="ui-marco__lateral">
         <div className="ui-marco__marca">
-          <span className="ui-marco__logo">
-            <EmblemaHalcon tamano={34} />
-          </span>
+          <LogoHalcones alto={34} variante="claro" className="ui-marco__logo-h" />
           <div>
             <div className="ui-marco__nombre">{SISTEMAS[sistema].nombre}</div>
             <div className="ui-marco__org">Seguridad Pública · Conchalí</div>

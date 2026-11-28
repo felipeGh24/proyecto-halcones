@@ -3,7 +3,7 @@ import { pedirPermisoNotificaciones } from "./AvisoDespacho";
 import { useState } from "react";
 import { centroideUV, checklistInicial, COMBUSTIBLE, guardarPpu, leerPpu, novedadesChecklist, compararMoviles, leerPuntosFijos, leerPuntosInteres, obtenerCliente, UNIDADES_VECINALES, useDatos, type Modalidad, accesoTotalActivo } from "@plataforma/datos";
 import { FormularioChecklist } from "./ChecklistMovil";
-import { avisar, Boton, Campo, Insignia, Segmentos, SelectorAdjuntos, useUsuario, EmblemaHalcon, IlustracionPatrulla } from "@plataforma/ui";
+import { avisar, Boton, Campo, Insignia, Segmentos, SelectorAdjuntos, useUsuario, LogoHalcones, IlustracionPatrulla } from "@plataforma/ui";
 import type { Adjunto } from "@plataforma/datos";
 
 
@@ -91,7 +91,7 @@ export function InicioTurno() {
   return (
     <div className="patrulla">
       <header className="patrulla__cabeza">
-        <EmblemaHalcon tamano={36} />
+        <LogoHalcones alto={34} variante="claro" />
         <div className="patrulla__cabeza-texto">
           <h1 className="patrulla__titulo">Inicio de turno</h1>
           <div className="pequeno texto-3">Halcones · app del patrullero</div>

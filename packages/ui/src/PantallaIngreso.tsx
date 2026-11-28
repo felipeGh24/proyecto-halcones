@@ -88,23 +88,9 @@ export function PantallaIngreso({ puntos, destino }: { puntos: string[]; destino
       {esHalcones ? (
         <aside className="ui-ingreso__lado ingreso-h">
           <div className="ingreso-h__marca">
-            <LogoHalcones tamano={76} />
-            <div>
-              <p className="ingreso-h__sistema">Sistema</p>
-              <p className="ingreso-h__nombre">HALCONES</p>
-              <p className="ingreso-h__org">Seguridad Pública · Municipalidad de Conchalí</p>
-            </div>
+            <LogoHalcones alto={400} conTexto className="ingreso-h__logo" />
           </div>
           <VistaHalcones />
-          <ul className="ingreso-h__puntos">
-            {puntos.slice(0, 3).map((p) => (
-              <li key={p}>
-                <Icono nombre="check" />
-                {p}
-              </li>
-            ))}
-          </ul>
-          <p className="pequeno ui-ingreso__pie">Plataforma integrada: Halcones · Georreferenciado · Análisis de eventos</p>
         </aside>
       ) : (
       <aside className="ui-ingreso__lado">
@@ -141,11 +127,7 @@ export function PantallaIngreso({ puntos, destino }: { puntos: string[]; destino
       <section className="ui-ingreso__form">
         {esHalcones && (
           <div className="ingreso-h__movil">
-            <LogoHalcones tamano={60} />
-            <div>
-              <strong>HALCONES</strong>
-              <span>Seguridad Pública · Conchalí</span>
-            </div>
+            <LogoHalcones alto={150} conTexto className="ingreso-h__logo" />
           </div>
         )}
         <div className="ingreso-demo-cinta" role="note">

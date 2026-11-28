@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { ESTADOS, SIGUIENTE, hace, infoDeClave, obtenerClave, obtenerCliente, procedimientoDeUnidad, unidadesActivas, useDatos, type EstadoProcedimiento, type EstadoUnidad, accesoTotalActivo } from "@plataforma/datos";
 import { AvisoDespacho } from "./AvisoDespacho";
-import { avisar, Boton, Icono, Insignia, Modal, Semaforo, useUsuario, type NombreIcono, EmblemaHalcon, IlustracionPatrulla } from "@plataforma/ui";
+import { avisar, Boton, Icono, Insignia, Modal, Semaforo, useUsuario, type NombreIcono, LogoHalcones, IlustracionPatrulla } from "@plataforma/ui";
 import { CierreTurno } from "./CierreTurno";
 import { InicioTurno } from "./InicioTurno";
 import { NuevoReporte } from "./NuevoReporte";
@@ -79,7 +79,7 @@ export function Patrulla() {
   return (
     <div className="patrulla patrulla--con-pestanas">
       <header className="patrulla__cabeza">
-        <EmblemaHalcon tamano={36} />
+        <LogoHalcones alto={34} variante="claro" />
         <div className="patrulla__cabeza-texto">
           <strong className="patrulla__titulo">
             {turno.halcon ? `Halcón ${turno.halcon} · ` : ""}

@@ -318,7 +318,7 @@ kbd { font-family: var(--fuente); font-size: 11px; border: 1px solid var(--borde
 
 /* ---------- App del patrullero: tema «Marino vivo» ---------- */
 .patrulla { background: #f1f5fb; }
-.patrulla__cabeza { background: linear-gradient(135deg, var(--marino), #1d4ed8); color: #fff; border-bottom: 0; box-shadow: 0 2px 10px rgba(11, 27, 63, 0.25); justify-content: flex-start; }
+.patrulla__cabeza { background: linear-gradient(135deg, #161b22, #2a313b); color: #fff; border-bottom: 2px solid var(--acero); box-shadow: 0 2px 10px rgba(22, 27, 34, 0.25); justify-content: flex-start; }
 .patrulla__cabeza-texto { flex: 1; min-width: 0; }
 .patrulla__cabeza .patrulla__titulo, .patrulla__cabeza strong { color: #fff; }
 .patrulla__cabeza .texto-3 { color: #bfd0f5; }

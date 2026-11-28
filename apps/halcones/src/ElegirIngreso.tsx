@@ -30,7 +30,7 @@ export function ElegirIngreso() {
     <main className="elegir">
       <div className="elegir__caja">
         <header className="elegir__cabeza">
-          <LogoHalcones tamano={64} />
+          <LogoHalcones alto={56} />
           <div>
             <h1>¿Cómo deseas iniciar?</h1>
             <p className="texto-2">

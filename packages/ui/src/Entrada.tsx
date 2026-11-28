@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LogoHalcones } from "./Logo";
+import { CAJA_COMPLETA, TRAZO_ALA, TRAZO_AVE, TRAZO_TEXTO } from "./Logo";
 
 const CLAVE = "plataforma.entrada.v1";
 
@@ -14,7 +14,10 @@ export function debeMostrarEntrada(): boolean {
   }
 }
 
-/** Entrada de Halcones: el anillo se dibuja, el halcón entra en picada y aparece el nombre. Se puede saltar. */
+/**
+ * Entrada de Halcones: el ala acero barre de izquierda a derecha, el halcón aparece con el mismo barrido,
+ * brilla el ojo y sube la palabra HALCONES. Se puede saltar con un toque.
+ */
 export function EntradaAnimada({ onFin }: { onFin: () => void }) {
   const [saliendo, setSaliendo] = useState(false);
 
@@ -22,10 +25,10 @@ export function EntradaAnimada({ onFin }: { onFin: () => void }) {
     try {
       sessionStorage.setItem(CLAVE, "1");
     } catch {
-      /* sin almacenamiento: igual se muestra una vez */
+      /* sin almacenamiento: igual se muestra */
     }
-    const t1 = window.setTimeout(() => setSaliendo(true), 2500);
-    const t2 = window.setTimeout(onFin, 3000);
+    const t1 = window.setTimeout(() => setSaliendo(true), 2700);
+    const t2 = window.setTimeout(onFin, 3200);
     return () => {
       window.clearTimeout(t1);
       window.clearTimeout(t2);
@@ -41,10 +44,18 @@ export function EntradaAnimada({ onFin }: { onFin: () => void }) {
     <div className={`entrada${saliendo ? " entrada--sale" : ""}`} onClick={saltar} role="presentation">
       <div className="entrada__brillo" aria-hidden="true" />
       <div className="entrada__centro">
-        <LogoHalcones tamano={180} className="entrada__logo" />
-        <h1 className="entrada__nombre">HALCONES</h1>
-        <p className="entrada__sub">Seguridad Pública · Municipalidad de Conchalí</p>
-        <span className="entrada__demo">Modo demostración</span>
+        <div className="entrada__logo" role="img" aria-label="Halcones">
+          <svg className="entrada__capa entrada__capa--ala" viewBox={CAJA_COMPLETA} aria-hidden="true">
+            <path d={TRAZO_ALA} fill="#6b7785" fillRule="evenodd" />
+          </svg>
+          <svg className="entrada__capa entrada__capa--ave" viewBox={CAJA_COMPLETA} aria-hidden="true">
+            <path d={TRAZO_AVE} fill="#161b22" fillRule="evenodd" />
+            <circle className="entrada__ojo" cx="895" cy="452" r="30" fill="#ffffff" />
+          </svg>
+          <svg className="entrada__capa entrada__capa--texto" viewBox={CAJA_COMPLETA} aria-hidden="true">
+            <path d={TRAZO_TEXTO} fill="#161b22" fillRule="evenodd" />
+          </svg>
+        </div>
       </div>
       <button type="button" className="entrada__saltar" onClick={saltar}>
         Saltar

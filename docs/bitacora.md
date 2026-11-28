@@ -212,3 +212,10 @@ Revisión de Halcones con las reglas del plugin UI/UX Pro Max (accesibilidad, ta
 - Entrada animada de Halcones (una vez por sesión, se puede saltar, no aparece con «reducir movimiento»): anillo que se dibuja, halcón en picada, nombre y aviso «Modo demostración».
 - Ingreso de Halcones en pantalla dividida: marca «Sistema HALCONES», vista de ejemplo de la Central y del aviso al celular del patrullero, cinta amarilla «MODO DEMOSTRACIÓN»; en el celular, logo y nombre arriba del formulario.
 - «¿Cómo deseas iniciar?» usa el logo nuevo. Pruebas: 60 unitarias y 14 de pantalla.
+
+## 13 · 28-11-2026 — Logo oficial y paleta «Grafito y acero»
+
+- Logo oficial aprobado por el usuario (halcón con ala y palabra HALCONES), vectorizado con potrace en `packages/ui/src/Logo.tsx` (capas ala, halcón y texto; variantes para fondo claro y oscuro). Original en `docs/logo-halcones-original.png`.
+- Entrada animada en fondo blanco, solo el logo y grande: barrido del ala, barrido del halcón, brillo del ojo y aparición de la palabra.
+- Ingreso: logo grande arriba y la vista de la Central más chica debajo; la cinta «MODO DEMOSTRACIÓN» sigue en el formulario.
+- Paleta «Grafito y acero» tomada del logo: menú lateral y cabecera del patrullero en grafito, superficies grises neutras, azul para acciones y cian para acentos. Logo en el menú, en «¿Cómo deseas iniciar?» y en la app del patrullero.
